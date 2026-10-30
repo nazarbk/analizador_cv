@@ -1,0 +1,138 @@
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Analizador <span>de CV</span></div>
+    <div class="tagline">Análisis privado: tu CV se procesa en este navegador y no se envía ni se guarda.</div>
+    <nav aria-label="Información">
+      <a href="#privacidad" data-goto="privacidad">Privacidad y uso</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <aside class="side" aria-label="Puntuación y secciones del informe">
+    <div class="scorecard" id="scoreboard"></div>
+    <nav class="toc" id="tabs" aria-label="Secciones del informe">
+      <p class="toc-h">Diagnóstico</p>
+      <a href="#resumen" data-view="resumen"><span>Resumen</span><b class="badge" data-badge="resumen"></b></a>
+      <a href="#ats" data-view="ats"><span>ATS e IA</span><b class="badge" data-badge="ats"></b></a>
+      <a href="#experiencia" data-view="experiencia"><span>Experiencia</span><b class="badge" data-badge="experiencia"></b></a>
+      <a href="#formato" data-view="formato"><span>Formato y país</span><b class="badge" data-badge="formato"></b></a>
+      <a href="#cambios" data-view="cambios"><span>Añadir y quitar</span><b class="badge" data-badge="cambios"></b></a>
+      <p class="toc-h">Ofertas</p>
+      <a href="#ofertas" data-view="ofertas"><span>Coincidencia con ofertas</span><b class="badge" data-badge="ofertas"></b></a>
+      <p class="toc-h">Herramientas</p>
+      <a href="#datos" data-view="datos"><span>Datos para copiar</span><b class="badge" data-badge="datos"></b></a>
+      <a href="#plantilla" data-view="plantilla"><span>CV en formato ATS</span><b class="badge" data-badge="plantilla"></b></a>
+      <a href="#versiones" data-view="versiones"><span>Comparar versiones</span><b class="badge" data-badge="versiones"></b></a>
+      <p class="toc-h">Información</p>
+      <a href="#privacidad" data-view="privacidad"><span>Privacidad y uso</span><b class="badge" data-badge="privacidad"></b></a>
+    </nav>
+  </aside>
+
+  <section class="report" aria-label="Informe">
+    <section class="doccard" id="drop" aria-label="Documento y destino">
+      <div class="dropzone">
+        <svg class="dz-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M28 5H13a4 4 0 0 0-4 4v30a4 4 0 0 0 4 4h22a4 4 0 0 0 4-4V16z"/>
+          <path d="M28 5v11h11"/>
+          <path d="M24 36V23"/>
+          <path d="M18.5 28.5 24 23l5.5 5.5"/>
+        </svg>
+        <div class="docinfo">
+          <span class="label">Documento analizado</span>
+          <strong id="docName">CV de ejemplo</strong>
+          <span class="small muted" id="docMeta"></span>
+          <span class="small muted drophint">Arrastra aquí tu CV o súbelo: PDF, DOCX, ODT o TXT.</span>
+        </div>
+        <label class="btn primary upload" for="file">Subir CV
+          <input type="file" id="file" accept=".pdf,.docx,.odt,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+        </label>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+      <div class="docgrid">
+        <div class="field">
+          <label class="label" for="country">País de la oferta</label>
+          <select id="country"></select>
+        </div>
+        <div class="field">
+          <label class="label" for="company">Tipo de empresa</label>
+          <select id="company"></select>
+        </div>
+      </div>
+      <details class="fold" id="offersBox">
+        <summary>Ofertas de trabajo <span class="badge" id="offerCount"></span><span class="small muted"> · opcional, hasta 5</span></summary>
+        <div class="foldbody">
+          <div class="field">
+            <label class="label" for="offer">Oferta 1 · la principal</label>
+            <textarea id="offer" rows="5" placeholder="Título del puesto en la primera línea, después funciones y requisitos"></textarea>
+          </div>
+          <div id="moreOffers" class="offer-list"></div>
+          <div class="toolbar"><button class="btn" id="addOffer" type="button">Añadir otra oferta</button><button class="btn primary" id="analyze" type="button">Analizar con estas ofertas</button></div>
+          <p class="fine">Con una oferta se miden palabras clave, años de experiencia e idiomas. Con varias, «Coincidencia con ofertas» muestra qué piden todas.</p>
+        </div>
+      </details>
+      <details class="fold" id="pasteBox">
+        <summary>Pegar el texto del CV</summary>
+        <div class="foldbody">
+          <textarea id="pasted" rows="7" placeholder="Pega aquí el texto completo de tu CV"></textarea>
+          <div class="toolbar"><button class="btn" id="analyzePasted" type="button">Analizar texto pegado</button></div>
+        </div>
+      </details>
+      <details class="fold" id="saveBox">
+        <summary>Guardar mi trabajo <span class="small muted" id="saveState">· desactivado</span></summary>
+        <div class="foldbody">
+          <label class="toggle" for="saveLocal"><input type="checkbox" id="saveLocal"> <span>Guardar el CV, las ofertas y mis cambios en este navegador</span></label>
+          <p class="fine">Opcional y desactivado por defecto. Se guarda solo en este dispositivo, nunca en un servidor. Cualquiera que use este navegador podría verlo: no lo actives en un ordenador compartido.</p>
+          <div class="toolbar"><button class="btn small" id="clearLocal" type="button">Borrar datos guardados</button><span class="small muted" id="saveStatus" role="status"></span></div>
+        </div>
+      </details>
+    </section>
+
+    <div class="banner restore" id="restoreBanner" hidden><span>Tienes un análisis guardado en este navegador (<span id="restoreDate"></span>).</span> <button class="btn small" id="restoreBtn" type="button">Recuperarlo</button> <button class="btn small" id="restoreDiscard" type="button">Borrarlo</button></div>
+    <div class="banner" id="sampleBanner">Estás viendo el análisis de un <strong>CV ficticio de ejemplo</strong>. Pulsa «Subir CV» para analizar el tuyo.</div>
+    <div class="view" id="v-resumen"></div>
+    <div class="view" id="v-ats" hidden></div>
+    <div class="view" id="v-ofertas" hidden></div>
+    <div class="view" id="v-experiencia" hidden></div>
+    <div class="view" id="v-formato" hidden></div>
+    <div class="view" id="v-cambios" hidden></div>
+    <div class="view" id="v-datos" hidden></div>
+    <div class="view" id="v-plantilla" hidden></div>
+    <div class="view" id="v-versiones" hidden></div>
+    <div class="view" id="v-privacidad" hidden>
+      <div class="sheet legal">
+        <h3>Privacidad y uso responsable</h3>
+        <h4>Qué pasa con tu CV</h4>
+        <ul>
+          <li>El archivo se lee y se analiza <strong>dentro de tu navegador</strong>. No se envía a ningún servidor, no se guarda y desaparece al cerrar o recargar la página.</li>
+          <li>La herramienta no usa cookies, analítica ni publicidad. Por defecto solo recuerda en tu navegador el país y el tipo de empresa elegidos.</li>
+          <li>Si activas «Guardar mi trabajo», el texto del CV, las ofertas, tus cambios y las versiones se guardan en el almacenamiento local de este navegador, sin salir del dispositivo. Puedes borrarlos en cualquier momento con «Borrar datos guardados» o desactivando la opción.</li>
+          <li>Las versiones que comparas se conservan solo mientras la página está abierta, salvo que actives el guardado.</li>
+          <li>La versión del CV en otro idioma se prepara con un diccionario dentro de tu navegador. Si copias los textos a un traductor o a un asistente de IA para traducir el resto, esos textos sí salen hacia ese servicio: elige uno de confianza.</li>
+          <li id="cdnNote">Para leer PDF y DOCX y generar el PDF del CV, el navegador descarga librerías de código abierto (pdf.js, JSZip y pdf-lib) desde una CDN pública la primera vez que las necesita. Esa descarga no incluye ningún dato de tu CV.</li>
+        </ul>
+        <h4>Cómo funciona el análisis</h4>
+        <ul>
+          <li>Es un análisis por reglas: comprueba estructura, formato, palabras clave, datos personales y convenciones de cada país. No usa IA generativa ni modelos que aprendan de tus datos.</li>
+          <li>Detecta datos personales sensibles (DNI, fecha de nacimiento, estado civil…) solo para recomendarte quitarlos. No deduce ni clasifica información sobre ti.</li>
+          <li>Los resultados son orientativos. Cada empresa configura su ATS de forma distinta, así que ninguna herramienta puede garantizar que un CV pase un filtro concreto.</li>
+        </ul>
+        <h4>Uso previsto</h4>
+        <ul>
+          <li>Está pensada para que <strong>cada persona revise su propio CV</strong>. Si analizas el CV de otra persona, hazlo con su consentimiento.</li>
+          <li>No debe usarse para puntuar, ordenar o descartar candidaturas de terceros. Ese uso entra en la categoría de alto riesgo del Reglamento europeo de IA (anexo III, empleo), cuyas obligaciones se aplican desde el 2 de diciembre de 2027, y además requeriría supervisión humana y evaluación de sesgos.</li>
+        </ul>
+        <h4>Información legal</h4>
+        <p class="muted small" id="legalOwner">Responsable del sitio, aviso legal y política de privacidad: consulta los enlaces del pie de página.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap" id="footLinks">
+    <span>Analizador de CV · resultados orientativos, sin garantía de selección.</span>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="print-root" id="printRoot"></div>

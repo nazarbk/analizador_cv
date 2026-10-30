@@ -1,0 +1,4 @@
+# La web ya está generada en site/ (python3 build.py), así que Netlify la publica sin compilar.
+[build]
+  publish = "site"
+  command = ""
