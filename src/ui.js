@@ -565,12 +565,33 @@
       $('#cdnNote').textContent = 'Todas las librerías (pdf.js, JSZip y pdf-lib) se sirven desde este mismo sitio: tu navegador no se conecta a terceros.';
       const links = window.CV_LEGAL_LINKS || [];
       $('#footLinks').innerHTML += links.map(([t, u]) => '<a href="' + h(u) + '"' + (/^https?:/.test(u) ? ' rel="noopener"' : '') + '>' + h(t) + '</a>').join('');
+      $('#handoffNote').hidden = false;
+      const br = $('.brand'); if (br) br.outerHTML = '<a class="brand" href="./" title="Ir a la página principal"><img src="assets/icon.svg" alt=""><b>' + br.innerHTML + '</b></a>';
       const au = window.CV_AUTHOR;
       if (au) { $('#legalOwner').innerHTML = 'Responsable del sitio: ' + h(au.name) + ' (<a href="mailto:' + h(au.email) + '">' + h(au.email) + '</a>). Aviso legal, privacidad y términos de uso en el pie de página.'; $('#footLinks').insertAdjacentHTML('beforeend', '<span>Hecho por ' + h(au.name) + '</span>'); }
     }
     state.text = window.CV_SAMPLE.text; state.meta = window.CV_SAMPLE.meta; state.sample = true;
     run(true);
     go(location.hash.slice(1) || 'resumen', false);
+    if (BUILD === 'selfhost') takeHandoff();
+  }
+  // CV subido desde la página principal: llega por IndexedDB y se borra en cuanto se lee
+  function takeHandoff() {
+    const fromHome = location.hash === '#subido';
+    if (fromHome) { try { history.replaceState(null, '', location.pathname + location.search + '#resumen'); } catch (e) { } }
+    let req;
+    try { req = indexedDB.open('cv-handoff', 1); } catch (e) { if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err'); return; }
+    req.onupgradeneeded = () => req.result.createObjectStore('f');
+    req.onerror = () => { if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err'); };
+    req.onsuccess = () => {
+      const db = req.result, tx = db.transaction('f', 'readwrite'), st = tx.objectStore('f'), g = st.get('pending');
+      g.onsuccess = () => {
+        const rec = g.result; st.delete('pending');
+        tx.oncomplete = () => db.close();
+        if (rec && rec.blob && Date.now() - rec.at < 10 * 60 * 1000) handleFile(new File([rec.blob], rec.name || 'CV', { type: rec.type || rec.blob.type || '' }));
+        else if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err');
+      };
+    };
   }
   // ---------- varias ofertas ----------
   function addOfferBox(value) {

@@ -38,6 +38,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .top .wrap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; padding-block: 14px; }
 .brand { font: 600 22px/1.1 var(--serif); }
 .brand span { color: var(--ink-2); font-weight: 400; }
+a.brand { color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
+a.brand img { width: 28px; height: 28px; }
+a.brand b { font-weight: inherit; }
+a.brand:hover span { color: var(--pen-strong); }
 .tagline { color: var(--ink-2); font-size: 13.5px; }
 .top nav { margin-left: auto; display: flex; gap: 16px; font-size: 13.5px; }
 .top nav a { text-decoration: none; }

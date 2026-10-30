@@ -8,7 +8,7 @@ srv=subprocess.Popen([sys.executable,'-m','http.server','8800','--bind','127.0.0
 with sync_playwright() as p:
     b=p.chromium.launch(); pg=b.new_page(viewport={'width':1366,'height':900}); errs=[]
     pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.goto('http://127.0.0.1:8800/selfhost/index.html'); pg.wait_for_selector('.scorecard .big')
+    pg.goto('http://127.0.0.1:8800/selfhost/analizador.html'); pg.wait_for_selector('.scorecard .big')
     pg.click('#tabs a[data-view=datos]')
     cnt=lambda k: pg.evaluate(f"()=>document.querySelectorAll('[data-path^=\"{k}.\"][data-path$=\".{ {'exp':'title','edu':'degree','langs':'name','projects':'name'}[k] }\"]').length")
     for k in ['exp','edu','langs','projects']: print(k,'inicial',cnt(k), end=' | ')

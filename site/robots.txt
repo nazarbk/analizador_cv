@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://analizador-cv-nazar.netlify.app/sitemap.xml

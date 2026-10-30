@@ -24,11 +24,16 @@ Herramienta web que analiza un currículum **en el navegador del usuario**: no h
 ## Estructura del repositorio
 
 ```
-src/                  código fuente (HTML, CSS, JS y textos legales)
+src/                  código fuente: analizador (markup, styles, *.js), página principal (landing.*), textos legales e iconos (assets/)
+scripts/make_icons.py regenera los PNG, el favicon y la imagen para redes a partir de src/assets/icon.svg
 test/                 pruebas (node test/fuzz.js; pruebas de navegador con Playwright)
 build.py              genera la web en site/ (y una copia en dist/)
 site/                 la web ya generada: es la carpeta que publica Netlify
-  index.html          la aplicación (HTML, CSS y JS en un solo archivo)
+  index.html          página principal: explica el proyecto y tiene el botón «Sube tu CV»
+  analizador.html     la aplicación (HTML, CSS y JS en un solo archivo)
+  assets/             icono (SVG y PNG) e imagen para redes sociales (og-image.png)
+  favicon.ico, apple-touch-icon.png, site.webmanifest
+  sitemap.xml, robots.txt, 404.html
   vendor/             pdf.js 6.2.108 (legacy), JSZip 3.10.1 y pdf-lib 1.17.1, servidos desde tu dominio
   aviso-legal.html    aviso legal (LSSI-CE)
   privacidad.html     política de privacidad (RGPD)
@@ -49,12 +54,17 @@ LICENSE               licencia MIT del código propio
 
 Sube a GitHub también la carpeta `site/` regenerada: Netlify la publica tal cual.
 
+**Dirección de la web.** `build.py` usa `https://analizador-cv-nazar.netlify.app` para la URL canónica, el mapa del sitio y la vista previa en redes sociales. Si tu sitio de Netlify tiene otro nombre o conectas un dominio propio, cámbiala en `SITE_URL` (o ejecuta `CV_SITE_URL=https://tu-dominio python3 build.py`) y vuelve a generar la web.
+
+**Subida desde la página principal.** El botón «Sube tu CV» de la portada deja el archivo un instante en IndexedDB (almacenamiento local del navegador, mismo sitio) y abre `analizador.html`, que lo lee y lo borra en el acto. El archivo nunca sale del navegador.
+
 ## Publicar en Netlify
 
 1. Sube el repositorio a GitHub.
 2. En Netlify: **Add new site → Import an existing project → GitHub** y elige el repositorio.
 3. Netlify lee `netlify.toml`: carpeta de publicación `site`, sin comando de compilación. Pulsa **Deploy**.
-4. Cada `git push` vuelve a publicar la web. Puedes cambiar el subdominio en **Site configuration → Change site name** o conectar un dominio propio.
+4. Cada `git push` vuelve a publicar la web.
+5. Para que Google la indexe: da de alta la web en Google Search Console (verificación por etiqueta HTML o DNS) y envía `sitemap.xml`. Puedes cambiar el subdominio en **Site configuration → Change site name** o conectar un dominio propio.
 
 `_headers` se aplica solo en Netlify. Bloquea que la web se cargue dentro de un `<iframe>` (protección contra clickjacking): en tu portfolio, enlázala en lugar de incrustarla.
 

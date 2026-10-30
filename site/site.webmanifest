@@ -1,0 +1,28 @@
+{
+  "name": "Analizador de CV",
+  "short_name": "Analizador CV",
+  "description": "Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.",
+  "lang": "es",
+  "start_url": "./analizador.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F7A74",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

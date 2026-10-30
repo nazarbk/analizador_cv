@@ -3,8 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <title>Política de privacidad · Analizador de CV</title>
+<link rel="canonical" href="https://analizador-cv-nazar.netlify.app/privacidad.html">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#0F7A74">
+
 <style>
 :root { --bg:#FFFFFF; --fg:#1F2430; --muted:#4A5160; --pen:#0F7A74; --sheet:#F9F9FC; --rule:#E3E3EC; --mark:#7B6CC6; color-scheme: light; }
 main { border-top:3px solid var(--pen); }
@@ -13,12 +20,13 @@ main { max-width:760px; margin:0 auto; padding:32px max(16px, env(safe-area-inse
 h1, h2 { font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; }
 h1 { font-size:30px; margin:16px 0 8px; } h2 { font-size:20px; margin-top:28px; }
 a { color:var(--pen); } li { margin:4px 0; }
+.top { display:flex; justify-content:space-between; gap:16px; }
 .note { border-left:4px solid var(--mark); background:var(--sheet); padding:10px 14px; color:var(--muted); font-size:14px; }
 .small { font-size:13px; color:var(--muted); }
 </style>
 </head>
 <body><main>
-<a href="./">← Volver al Analizador de CV</a>
+<nav class="top"><a href="./">← Inicio</a><a href="analizador.html">Analizar mi CV</a></nav>
 <h1>Política de privacidad</h1>
 
 <h2>Resumen</h2>
@@ -29,6 +37,7 @@ a { color:var(--pen); } li { margin:4px 0; }
 <ul>
 <li><strong>Contenido del CV:</strong> no lo recibimos ni lo almacenamos. Todo el procesamiento ocurre en tu dispositivo.</li>
 <li><strong>Datos técnicos de conexión:</strong> como cualquier sitio web, el servicio de alojamiento (Netlify, Inc., 101 2nd Street, San Francisco, CA 94105, EE. UU.) registra la dirección IP, la fecha y la página solicitada para entregar el sitio y protegerlo frente a abusos. Base jurídica: interés legítimo (art. 6.1.f RGPD). Netlify actúa como encargado del tratamiento conforme a su acuerdo de tratamiento de datos (art. 28 RGPD) y conserva esos registros el tiempo que establece su política de privacidad. El titular no usa esos registros para identificar a nadie.</li>
+<li><strong>Subida desde la página principal:</strong> si eliges tu CV en la página de inicio, el archivo se deja un instante en el almacenamiento local de tu navegador (IndexedDB) para abrirlo en el analizador, que lo borra en cuanto lo lee. Si no se abre, se descarta a los 10 minutos la próxima vez que entres en el analizador. No se transmite a ningún servidor.</li>
 <li><strong>Preferencias locales:</strong> el país y el tipo de empresa que eliges se guardan solo en el almacenamiento local de tu navegador para recordarlos. Puedes borrarlos desde la configuración del navegador. No se transmiten.</li>
 <li><strong>Guardado opcional de tu trabajo:</strong> solo si activas «Guardar mi trabajo», el texto de tu CV, las ofertas que pegas, tus cambios y las versiones se guardan en el almacenamiento local de tu navegador para que puedas recuperarlos. No se transmiten a ningún servidor. Base jurídica: tu consentimiento, que puedes retirar en cualquier momento desactivando la opción o pulsando «Borrar datos guardados», lo que elimina esos datos de inmediato.</li>
 </ul>

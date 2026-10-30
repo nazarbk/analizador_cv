@@ -8,7 +8,7 @@ srv=subprocess.Popen([sys.executable,'-m','http.server','8771','--bind','127.0.0
 with sync_playwright() as p:
     b=p.chromium.launch(); pg=b.new_page(viewport={'width':1300,'height':900}); errs=[]
     pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.goto('http://127.0.0.1:8771/selfhost/index.html'); pg.wait_for_selector('.scorecard .big')
+    pg.goto('http://127.0.0.1:8771/selfhost/analizador.html'); pg.wait_for_selector('.scorecard .big')
     pg.click('#tabs a[data-view=datos]')
     print('projects at load:', pg.locator('.proj').count())
     pg.click('#v-datos [data-add="projects"]')

@@ -12,7 +12,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':1366,'height':900}, accept_downloads=True); pg=ctx.new_page(); errs=[]
     pg.on('pageerror', lambda e: errs.append(str(e)))
     ctx.grant_permissions(['clipboard-read','clipboard-write'])
-    pg.goto('http://127.0.0.1:8802/selfhost/index.html'); pg.wait_for_selector('.scorecard .big')
+    pg.goto('http://127.0.0.1:8802/selfhost/analizador.html'); pg.wait_for_selector('.scorecard .big')
     if CV:
         pg.set_input_files('#file', CV); pg.wait_for_selector('#status:has-text("analizado")', timeout=60000)
     pg.click('#tabs a[data-view=datos]')

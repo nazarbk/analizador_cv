@@ -24,7 +24,7 @@ def summary(page):
 results={}
 with sync_playwright() as p:
     b=p.chromium.launch()
-    for build,url in [('selfhost','http://127.0.0.1:8765/selfhost/index.html'),('artifact','http://127.0.0.1:8765/artifact/analizador-cv.html')]:
+    for build,url in [('selfhost','http://127.0.0.1:8765/selfhost/analizador.html'),('artifact','http://127.0.0.1:8765/artifact/analizador-cv.html')]:
         ctx=b.new_context(viewport={'width':1300,'height':900}); page=ctx.new_page()
         errs=[]; page.on('console', lambda m: m.type=='error' and errs.append(m.text)); page.on('pageerror', lambda e: errs.append(str(e)))
         if build=='artifact':
