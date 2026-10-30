@@ -512,27 +512,95 @@
   // ---------- navegación ----------
   function go(view, push) {
     if (!VIEWS.includes(view)) view = 'resumen';
+    const prev = VIEWS.find(v => !$('#v-' + v).hidden);
     VIEWS.forEach(v => { $('#v-' + v).hidden = v !== view; });
+    if (prev && prev !== view && !reduceMotion()) { const el = $('#v-' + view); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
     $$('#tabs a').forEach(a => { if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (push !== false && location.hash !== '#' + view) { try { history.replaceState(null, '', '#' + view); } catch (e) { location.hash = view; } }
   }
 
   // ---------- carga de archivos ----------
+  // ---------- análisis en curso ----------
+  const STEPS = {
+    file: ['Leyendo el archivo', 'Detectando secciones, puestos y fechas', 'Comprobando filtros ATS e IA', 'Calculando puntuaciones y recomendaciones'],
+    text: ['Leyendo el texto', 'Detectando secciones, puestos y fechas', 'Comprobando filtros ATS e IA', 'Calculando puntuaciones y recomendaciones'],
+    offers: ['Leyendo las ofertas', 'Buscando palabras clave y requisitos', 'Comparando con tu CV', 'Actualizando el informe']
+  };
+  const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const frame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+  let busy = false;
+  // Muestra el panel de análisis mientras se ejecuta work(step) y luego descubre el informe con una transición.
+  // minMs evita que el panel aparezca y desaparezca de golpe cuando el análisis es casi instantáneo.
+  async function withLoading(kind, name, minMs, work) {
+    if (busy) return false;
+    busy = true;
+    const steps = STEPS[kind], rm = reduceMotion(), t0 = performance.now(), box = $('#analyzing');
+    $('#anKicker').textContent = kind === 'offers' ? 'Comparando con las ofertas' : 'Analizando tu CV';
+    $('#anName').textContent = name;
+    $('#anSteps').innerHTML = steps.map(s => '<li>' + h(s) + '</li>').join('');
+    let cur = -1;
+    const step = i => {
+      if (i <= cur) return; cur = Math.min(i, steps.length - 1);
+      $$('#anSteps li').forEach((li, k) => { li.className = k < cur ? 'ok' : k === cur ? 'on' : ''; });
+      $('#anBar').style.width = Math.round((cur + .5) / steps.length * 100) + '%';
+      $('#anLive').textContent = steps[cur] + '…';
+    };
+    document.body.classList.remove('cv-reveal');
+    document.body.classList.add('is-loading'); $('.report').classList.add('is-loading'); $('.report').setAttribute('aria-busy', 'true');
+    box.hidden = false; step(0);
+    const r = box.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight - 120) box.scrollIntoView({ block: 'center', behavior: rm ? 'auto' : 'smooth' });
+    let err = null;
+    try { await work(step); } catch (e) { err = e; }
+    if (!err) {
+      // cada paso se ve al menos un momento: se reparten a lo largo de minMs (o enseguida si el análisis ya tardó)
+      const min = rm ? 250 : minMs, until = ms => wait(Math.max(0, t0 + ms - performance.now()));
+      for (let i = cur + 1; i < steps.length; i++) { await until(min * i / steps.length); step(i); }
+      await until(min);
+      $$('#anSteps li').forEach(li => { li.className = 'ok'; }); $('#anBar').style.width = '100%';
+      await wait(rm ? 0 : 260);
+    }
+    box.hidden = true;
+    document.body.classList.remove('is-loading'); $('.report').classList.remove('is-loading'); $('.report').removeAttribute('aria-busy');
+    busy = false;
+    if (err) throw err;
+    if (!rm) { document.body.classList.add('cv-reveal'); countUp($('#scoreboard .big')); setTimeout(() => document.body.classList.remove('cv-reveal'), 1300); }
+    return true;
+  }
+  // la puntuación global sube desde 0 hasta su valor
+  function countUp(el) {
+    const node = el && el.firstChild; if (!node || node.nodeType !== 3) return;
+    const to = parseInt(node.nodeValue, 10); if (!(to > 0)) return;
+    const t0 = performance.now(), dur = 850;
+    const tick = t => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); node.nodeValue = String(Math.round(to * e)); if (p < 1) requestAnimationFrame(tick); };
+    node.nodeValue = '0'; requestAnimationFrame(tick);
+  }
+
+  let queued = null;
   async function handleFile(file) {
     if (!file) return;
+    if (busy) { queued = file; return; }   // si llega otro archivo durante el análisis, se analiza al terminar
     if (file.size > 15 * 1024 * 1024) { setStatus('El archivo supera 15 MB. Un CV no debería pesar tanto: expórtalo de nuevo comprimiendo las imágenes.', 'err'); return; }
     setStatus('Leyendo «' + file.name + '»…', 'busy');
+    let res;
     try {
-      const res = await window.CVExtract.fromFile(file);
-      state.text = res.text; state.meta = res.meta; state.sample = false; state.label = file.name;
-      run(true);
-      addVersion(file.name);
+      await withLoading('file', file.name, 1300, async step => {
+        res = await window.CVExtract.fromFile(file);
+        step(1); await frame();
+        state.text = res.text; state.meta = res.meta; state.sample = false; state.label = file.name;
+        run(true);
+        addVersion(file.name);
+        go('resumen');
+      });
       setStatus(res.text.trim().length < 300 ? '«' + file.name + '» leído, pero casi sin texto: revisa la sección «ATS e IA».' : '«' + file.name + '» analizado. El archivo no ha salido de tu navegador.', res.text.trim().length < 300 ? 'err' : '');
-      go('resumen');
     } catch (e) {
       console.error(e);
-      setStatus(/password|contraseña/i.test(String(e && e.message)) ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.' : (e && e.message && !/^(Cannot|Failed|Unexpected|undefined)/.test(e.message) ? e.message : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.'), 'err');
+      const msg = String(e && e.message || ''), nm = String(e && e.name || '');
+      setStatus(/password|contraseña/i.test(msg) || nm === 'PasswordException' ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.'
+        : /invalid pdf|InvalidPDF|bad xref|corrupt|end of central directory|zip/i.test(msg + ' ' + nm) ? 'El archivo está dañado o no es del tipo que indica su extensión. Expórtalo de nuevo desde tu editor (PDF o DOCX) o pega el texto.'
+        : msg && /[áéíóúñ]|^(El|La|No|Este|Ese)\b/.test(msg) ? msg : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.', 'err');
     }
+    if (queued) { const q = queued; queued = null; handleFile(q); }
   }
 
   function init() {
@@ -545,9 +613,16 @@
     $('#analyzePasted').addEventListener('click', () => {
       const t = $('#pasted').value.trim();
       if (t.length < 50) { setStatus('Pega el texto completo del CV (al menos unas líneas).', 'err'); return; }
-      state.text = t; state.meta = { fileType: 'txt', fileName: '' }; state.sample = false; state.label = 'Texto pegado'; run(true); addVersion('Texto pegado'); setStatus('Texto analizado.'); go('resumen');
+      withLoading('text', 'Texto pegado', 1000, async () => {
+        await frame();
+        state.text = t; state.meta = { fileType: 'txt', fileName: '' }; state.sample = false; state.label = 'Texto pegado'; run(true); addVersion('Texto pegado'); go('resumen');
+      }).then(ok => { if (ok) setStatus('Texto analizado.'); });
     });
-    $('#analyze').addEventListener('click', () => { run(false); go(getOffers().length > 1 ? 'ofertas' : 'resumen'); toast('Análisis actualizado'); });
+    $('#analyze').addEventListener('click', () => {
+      const n = getOffers().length;
+      withLoading('offers', n ? (n === 1 ? '1 oferta' : n + ' ofertas') : 'Sin ofertas pegadas', 800, async () => { await frame(); run(false); go(n > 1 ? 'ofertas' : 'resumen'); })
+        .then(ok => { if (ok) toast('Análisis actualizado'); });
+    });
     $('#addOffer').addEventListener('click', () => { addOfferBox(''); const t = $$('#moreOffers textarea').pop(); if (t) t.focus(); });
     $('#offer').addEventListener('input', scheduleSave);
     initSave();

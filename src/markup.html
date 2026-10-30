@@ -88,6 +88,20 @@
       </details>
     </section>
 
+    <div class="analyzing" id="analyzing" hidden>
+      <div class="an-doc" aria-hidden="true">
+        <svg viewBox="0 0 120 150"><path class="pg" d="M14 4h66l26 26v104a12 12 0 0 1-12 12H14A12 12 0 0 1 2 134V16A12 12 0 0 1 14 4z"/><path class="fold" d="M80 4v18a8 8 0 0 0 8 8h18"/><rect class="ln t" x="18" y="40" width="46" height="8" rx="4"/><rect class="ln" x="18" y="60" width="74" height="6" rx="3"/><rect class="ln" x="18" y="76" width="64" height="6" rx="3"/><rect class="ln" x="18" y="92" width="70" height="6" rx="3"/><rect class="ln" x="18" y="108" width="50" height="6" rx="3"/><rect class="ln" x="18" y="124" width="60" height="6" rx="3"/></svg>
+        <span class="an-scan"></span>
+      </div>
+      <div class="an-body">
+        <span class="label" id="anKicker">Analizando tu CV</span>
+        <strong id="anName"></strong>
+        <div class="an-progress" aria-hidden="true"><i id="anBar"></i></div>
+        <ol class="an-steps" id="anSteps"></ol>
+        <p class="small muted">Todo ocurre en tu navegador: el archivo no se sube a ningún servidor.</p>
+      </div>
+      <p class="sr-only" id="anLive" role="status" aria-live="polite"></p>
+    </div>
     <div class="banner restore" id="restoreBanner" hidden><span>Tienes un análisis guardado en este navegador (<span id="restoreDate"></span>).</span> <button class="btn small" id="restoreBtn" type="button">Recuperarlo</button> <button class="btn small" id="restoreDiscard" type="button">Borrarlo</button></div>
     <div class="banner" id="sampleBanner">Estás viendo el análisis de un <strong>CV ficticio de ejemplo</strong>. Pulsa «Subir CV» para analizar el tuyo.</div>
     <div class="view" id="v-resumen"></div>
