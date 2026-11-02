@@ -12,20 +12,20 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#0F7A74">
-<link rel="canonical" href="https://analizador-cv-nazar.netlify.app/">
+<link rel="canonical" href="https://cv-analizador.netlify.app/">
 <meta name="author" content="Nazar Blanco Kataran">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_ES">
 <meta property="og:site_name" content="Analizador de CV">
 <meta property="og:title" content="Analizador de CV: descubre cómo leen tu CV los filtros ATS">
 <meta property="og:description" content="Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.">
-<meta property="og:url" content="https://analizador-cv-nazar.netlify.app/">
-<meta property="og:image" content="https://analizador-cv-nazar.netlify.app/assets/og-image.png">
+<meta property="og:url" content="https://cv-analizador.netlify.app/">
+<meta property="og:image" content="https://cv-analizador.netlify.app/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Analizador de CV: puntuación del CV y categorías del análisis">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Analizador de CV", "url": "https://analizador-cv-nazar.netlify.app/", "description": "Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.", "inLanguage": "es", "applicationCategory": "BusinessApplication", "operatingSystem": "Cualquiera (navegador web)", "browserRequirements": "Requiere JavaScript y un navegador actual", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "author": {"@type": "Person", "name": "Nazar Blanco Kataran", "url": "https://github.com/nazarbk"}, "image": "https://analizador-cv-nazar.netlify.app/assets/og-image.png", "featureList": ["Compatibilidad con ATS e IA", "Puntos fuertes y débiles", "Coincidencia con ofertas de empleo", "Datos listos para copiar en portales de empleo", "CV en formato ATS en PDF y Word", "Versión del CV en inglés", "Formato por país", "Comparación de versiones"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Analizador de CV", "url": "https://cv-analizador.netlify.app/", "description": "Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.", "inLanguage": "es", "applicationCategory": "BusinessApplication", "operatingSystem": "Cualquiera (navegador web)", "browserRequirements": "Requiere JavaScript y un navegador actual", "isAccessibleForFree": true, "offers": [{"@type": "Offer", "name": "Análisis gratuito", "price": "0", "priceCurrency": "EUR"}, {"@type": "Offer", "name": "Informe Pro: CV adaptado a una oferta y carta de presentación", "price": "4.99", "priceCurrency": "EUR"}], "author": {"@type": "Person", "name": "Nazar Blanco Kataran", "url": "https://github.com/nazarbk"}, "image": "https://cv-analizador.netlify.app/assets/og-image.png", "featureList": ["Compatibilidad con ATS e IA", "Puntos fuertes y débiles", "Coincidencia con ofertas de empleo", "Datos listos para copiar en portales de empleo", "CV en formato ATS en PDF y Word", "Versión del CV en inglés", "Formato por país", "Comparación de versiones"]}</script>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}
 :root {
@@ -198,6 +198,23 @@ a { color: var(--pen); }
   .lp-foot p { margin-left: 0; }
 }
 
+/* precios */
+.lp-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 36px; max-width: 920px; }
+.lp-plan { display: flex; flex-direction: column; gap: 14px; background: #fff; border: 1px solid var(--rule); border-radius: 14px; padding: 26px 26px 24px; }
+.lp-plan h3 { font-size: 22px; }
+.lp-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lp-price b { font: 600 40px/1 var(--serif); color: var(--ink); }
+.lp-price span { color: var(--ink-3); font-size: 14px; }
+.lp-plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; flex: 1; align-content: start; }
+.lp-plan li { position: relative; padding-left: 26px; color: var(--ink-2); font-size: 15px; }
+.lp-plan li::before { content: ""; position: absolute; left: 2px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--pen-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-4.9' fill='none' stroke='%230B5F5A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.lp-plan .lp-btn { align-self: flex-start; }
+.lp-plan-pro { border-color: var(--lila-line); background: linear-gradient(180deg, var(--lila-soft), #fff 55%); box-shadow: 0 14px 40px rgba(78, 63, 150, .10); }
+.lp-plan-pro h3 { color: var(--lila-ink); }
+.lp-plan-pro li::before { background-color: var(--lila-soft); }
+.lp-plan .lp-fine { margin-top: 0; font-size: 13px; }
+@media (max-width: 760px) { .lp-plans { grid-template-columns: minmax(0, 1fr); } .lp-plan .lp-btn { align-self: stretch; } }
+
 </style>
 </head>
 <body>
@@ -211,6 +228,7 @@ a { color: var(--pen); }
     <nav aria-label="Secciones">
       <a href="#que-analiza">Qué analiza</a>
       <a href="#como-funciona">Cómo funciona</a>
+      <a href="#precios">Precios</a>
       <a href="#privacidad">Privacidad</a>
       <a href="#preguntas">Preguntas</a>
     </nav>
@@ -297,32 +315,67 @@ a { color: var(--pen); }
     </div>
   </section>
 
-  <section class="lp-sec" id="privacidad" aria-labelledby="h-priv">
+  <section class="lp-sec" id="precios" aria-labelledby="h-precios">
+    <div class="lp-wrap">
+      <p class="lp-kicker">Precios</p>
+      <h2 id="h-precios">El análisis es gratis. Si quieres el CV adaptado a una oferta, son 4,99 €</h2>
+      <div class="lp-plans">
+        <article class="lp-plan">
+          <h3>Gratis</h3>
+          <p class="lp-price"><b>0 €</b><span>sin registro</span></p>
+          <ul>
+            <li>Puntuación ATS e IA y puntos fuertes y débiles</li>
+            <li>Coincidencia de palabras clave con hasta 5 ofertas</li>
+            <li>Datos listos para copiar en portales de empleo</li>
+            <li>CV en formato ATS en PDF y Word, también en inglés</li>
+            <li>Todo se procesa en tu navegador</li>
+          </ul>
+          <a class="lp-btn lp-btn-ghost" href="analizador.html">Analizar mi CV gratis</a>
+        </article>
+        <article class="lp-plan lp-plan-pro">
+          <h3>Informe Pro</h3>
+          <p class="lp-price"><b>4,99 €</b><span>pago único · IVA incluido</span></p>
+          <ul>
+            <li>Tu CV reescrito para una oferta concreta, sin inventar nada</li>
+            <li>Carta de presentación personalizada</li>
+            <li>Encaje requisito a requisito con la oferta</li>
+            <li>Puntuación ATS antes y después de adaptar el CV</li>
+            <li>En español o en inglés · hasta 3 generaciones en 30 días</li>
+          </ul>
+          <a class="lp-btn lp-btn-primary" href="analizador.html#pro">Conseguir el Informe Pro</a>
+          <p class="lp-fine">Usa IA (Anthropic) solo si lo compras y lo aceptas expresamente. Pago con Stripe.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-sec lp-alt" id="privacidad" aria-labelledby="h-priv">
     <div class="lp-wrap lp-priv">
       <div>
         <p class="lp-kicker">Privacidad</p>
-        <h2 id="h-priv">Tu CV es tuyo: no viaja a ningún servidor</h2>
-        <p>Un CV tiene tu nombre, tu teléfono, tu email y tu historial laboral. Por eso todo el análisis se hace con código que se ejecuta en tu propio navegador: el archivo no se envía, no se guarda y desaparece al cerrar la página.</p>
+        <h2 id="h-priv">Tu CV es tuyo: el análisis gratis no sale de tu navegador</h2>
+        <p>Un CV tiene tu nombre, tu teléfono, tu email y tu historial laboral. Por eso el análisis gratuito se hace con código que se ejecuta en tu propio navegador: el archivo no se envía, no se guarda y desaparece al cerrar la página.</p>
+        <p>Solo si compras el Informe Pro, y después de aceptarlo, se envía el texto de tu CV (sin tu nombre ni tus datos de contacto) y la oferta a la API de IA de Anthropic para generarlo. Esta web no lo guarda.</p>
         <p>No hay cuentas, cookies, publicidad ni analítica. Las librerías que leen los PDF y los Word se sirven desde esta misma web, así que tu navegador no se conecta a terceros. Si quieres retomar el trabajo otro día, puedes activar el guardado en tu propio navegador; está desactivado por defecto.</p>
         <p><a href="privacidad.html">Leer la política de privacidad</a></p>
       </div>
       <ul class="lp-priv-list">
-        <li><b>0</b> archivos enviados a servidores</li>
+        <li><b>0</b> archivos enviados en el análisis gratuito</li>
         <li><b>0</b> cookies</li>
         <li><b>0</b> cuentas que crear</li>
       </ul>
     </div>
   </section>
 
-  <section class="lp-sec lp-alt" id="preguntas" aria-labelledby="h-faq">
+  <section class="lp-sec" id="preguntas" aria-labelledby="h-faq">
     <div class="lp-wrap lp-faq">
       <p class="lp-kicker">Preguntas</p>
       <h2 id="h-faq">Lo que conviene saber antes de empezar</h2>
       <details><summary>¿Qué es un ATS y por qué importa?</summary><p>Un ATS (sistema de seguimiento de candidaturas) es el software que usan muchas empresas para recibir, leer y filtrar los CV. Si convierte mal tu documento, por ejemplo mezclando columnas o perdiendo tu email, tu candidatura puede quedar incompleta o fuera del filtro antes de que la vea una persona.</p></details>
-      <details><summary>¿Es gratis?</summary><p>Sí, es gratuito y no necesita registro. Es un proyecto personal sin publicidad ni funciones de pago.</p></details>
+      <details><summary>¿Es gratis?</summary><p>El análisis completo, los datos para copiar y el CV en formato ATS son gratis y sin registro. Solo es de pago el Informe Pro (4,99 €, pago único): tu CV reescrito para una oferta concreta, la carta de presentación y el encaje requisito a requisito.</p></details>
       <details><summary>¿Guardáis mi CV o lo usáis para algo?</summary><p>No. El archivo se procesa en tu navegador y no llega a ningún servidor. Solo si activas «Guardar mi trabajo» se guarda en el almacenamiento de tu propio navegador, y puedes borrarlo cuando quieras.</p></details>
       <details><summary>¿Garantiza que pase cualquier filtro?</summary><p>No. Cada empresa configura su ATS de forma distinta, así que ninguna herramienta puede garantizarlo. El análisis aplica las buenas prácticas más extendidas y te dice qué mejorar y por qué; los resultados son orientativos.</p></details>
-      <details><summary>¿Usa inteligencia artificial?</summary><p>No usa IA generativa ni modelos que aprendan de tus datos. Es un análisis por reglas: estructura, formato, palabras clave, coherencia y convenciones de cada país.</p></details>
+      <details><summary>¿Usa inteligencia artificial?</summary><p>El análisis gratuito no: funciona por reglas dentro de tu navegador. El Informe Pro sí usa IA generativa (la API de Anthropic) para reescribir tu CV y redactar la carta, y solo si lo compras y lo aceptas expresamente; se envía el texto del CV sin tu nombre ni tus datos de contacto, y no se guarda en esta web. Según sus condiciones comerciales, Anthropic no usa los datos enviados por su API para entrenar sus modelos.</p></details>
       <details><summary>¿Puedo generar mi CV en inglés?</summary><p>Sí. Crea la versión en inglés desde «Datos para copiar»: idiomas, fechas, lugares y titulaciones habituales se traducen solos, y el resto se marca para que lo traduzcas tú o con el traductor que prefieras.</p></details>
       <details><summary>¿Qué formatos admite?</summary><p>PDF con texto seleccionable, Word (.docx), OpenDocument (.odt) y texto plano. Si tu PDF es una imagen escaneada, no tiene texto que leer: expórtalo de nuevo desde el editor original o pega el texto.</p></details>
       <details><summary>¿Lo puede usar una empresa para filtrar candidatos?</summary><p>No está pensado para eso. Es para que cada persona revise su propio CV. Usarlo para puntuar o descartar candidaturas de terceros lo convertiría en un sistema de alto riesgo según el Reglamento europeo de IA, y los términos de uso lo prohíben.</p></details>
@@ -351,6 +404,7 @@ a { color: var(--pen); }
       <a href="aviso-legal.html">Aviso legal</a>
       <a href="privacidad.html">Privacidad</a>
       <a href="terminos.html">Términos de uso</a>
+      <a href="condiciones.html">Condiciones de venta</a>
       <a href="https://github.com/nazarbk" rel="noopener">Código en GitHub</a>
     </nav>
     <p>Hecho por Nazar Blanco Kataran</p>

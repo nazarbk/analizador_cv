@@ -26,7 +26,7 @@
       if (state.r) renderPlantilla();
     }).catch(() => {});
   }
-  const VIEWS = ['resumen', 'ats', 'ofertas', 'experiencia', 'formato', 'cambios', 'datos', 'plantilla', 'versiones', 'privacidad'];
+  const VIEWS = ['resumen', 'ats', 'ofertas', 'pro', 'experiencia', 'formato', 'cambios', 'datos', 'plantilla', 'versiones', 'privacidad'];
 
   // ---------- utilidades de interfaz ----------
   let toastT = 0;
@@ -92,7 +92,7 @@
 
   function render() {
     $('#sampleBanner').hidden = !state.sample;
-    renderScore(); renderResumen(); renderAts(); renderOfertas(); renderExp(); renderFormato(); renderCambios(); renderDatos(); renderPlantilla(); renderVersiones();
+    renderScore(); renderResumen(); renderAts(); renderOfertas(); renderExp(); renderFormato(); renderCambios(); renderDatos(); renderPlantilla(); renderVersiones(); renderPro();
     renderNav(); renderDoc();
   }
   // insignias del índice: puntuación del apartado o número de elementos
@@ -114,6 +114,7 @@
     badge('cambios', pend || null, 'n', pend + ' cambios sugeridos');
     badge('ofertas', state.match ? state.match.offers.length + (state.match.offers.length === 1 ? ' oferta' : ' ofertas') : null, 'n');
     badge('versiones', state.versions.length || null, 'n', state.versions.length + ' versiones');
+    badge('pro', PRO.available ? PRO.price : null, 'price', 'Informe de pago');
     $('#offerCount').textContent = state.match ? state.match.offers.length : '';
     $('#offerCount').hidden = !state.match;
   }
@@ -509,6 +510,292 @@
     if (selfhost) $('#tplPrint').addEventListener('click', () => { const pr = $('#printRoot'); pr.innerHTML = '<article class="cvpage">' + $('#cvPreview').innerHTML + '</article>'; window.print(); });
   }
 
+  // ---------- Informe Pro (de pago) ----------
+  // Flujo: la persona pega la oferta y acepta las condiciones → /api/checkout (Stripe) → vuelve con ?pro=<sesión>
+  // → /api/generate verifica el pago y devuelve, en streaming, el informe generado con la API de Claude.
+  // El CV y la oferta se guardan solo en este navegador (IndexedDB) mientras se paga, para no perderlos al salir a Stripe.
+  const PRO = { available: false, price: '4,99 €', max: 3, s: null };
+  const PRO_STEPS = ['Comprobando el pago', 'Leyendo la oferta y tu CV', 'Evaluando requisito a requisito', 'Reescribiendo tu CV para la oferta', 'Redactando la carta de presentación'];
+  const PRO_ERR = {
+    pedido_no_valido: 'No encuentro ese pedido. Si has pagado, escríbeme a nazarblanco@gmail.com con el email de la compra y lo resuelvo.',
+    pedido_no_encontrado: 'No encuentro ese pedido. Si has pagado, escríbeme a nazarblanco@gmail.com con el email de la compra y lo resuelvo.',
+    pago_no_completado: 'El pago todavía no figura como completado. Espera unos segundos y pulsa «Reintentar».',
+    pedido_caducado: 'Este pedido tiene más de 30 días y ya no permite generar informes.',
+    limite_generaciones: 'Ya has usado las 3 generaciones incluidas en este pedido.',
+    ia_saturada: 'El servicio de IA está saturado en este momento. No se ha gastado ningún intento: pulsa «Reintentar» en un minuto.',
+    ia_no_disponible: 'No se ha podido generar el informe. No se ha gastado ningún intento: pulsa «Reintentar».',
+    stripe_no_disponible: 'No se ha podido conectar con la pasarela de pago. Inténtalo de nuevo en un momento.',
+    pagos_no_configurados: 'El Informe Pro no está activo todavía.',
+    oferta_muy_corta: 'Pega la oferta completa: título, funciones y requisitos.',
+    oferta_muy_larga: 'La oferta es demasiado larga. Pega solo el título, las funciones y los requisitos.',
+    cv_muy_largo: 'El CV es demasiado largo para generar el informe. Recorta las descripciones más antiguas en «Datos para copiar».',
+    red: 'Se ha perdido la conexión mientras se generaba el informe. No se ha gastado ningún intento si no llegó a terminar: pulsa «Reintentar».'
+  };
+  // almacenamiento local del navegador (la misma base de datos que usa la página principal)
+  function idb(mode, fn) {
+    return new Promise((resolve, reject) => {
+      let req; try { req = indexedDB.open('cv-handoff', 1); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = () => req.result.createObjectStore('f');
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => { const db = req.result, tx = db.transaction('f', mode), out = fn(tx.objectStore('f')); tx.oncomplete = () => { db.close(); resolve(out && 'result' in out ? out.result : undefined); }; tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); }; };
+    });
+  }
+  const idbGet = k => idb('readonly', st => st.get(k)).catch(() => null);
+  const idbSet = (k, v) => idb('readwrite', st => { st.put(v, k); }).catch(() => null);
+  const idbDel = k => idb('readwrite', st => { st.delete(k); }).catch(() => null);
+
+  const proLang = () => (PRO.s && PRO.s.lang) || (state.r && state.r.lang === 'en' ? 'en' : 'es');
+  function proCvPayload() {
+    // se envía lo imprescindible: sin nombre, email, teléfono, enlaces ni ubicación
+    const e = (PRO.s && PRO.s.edit) || state.edit;
+    return {
+      titular: e.headline || '', perfil: (e.summary || '').trim() || (e.draft || '').trim(),
+      exp: e.exp.map((x, i) => ({ indice: i, puesto: x.title, empresa: x.company, inicio: x.start, fin: x.end, descripcion: x.desc })),
+      proyectos: e.projects.map((p, i) => ({ indice: i, nombre: p.name, periodo: p.period, descripcion: p.desc, herramientas: p.tools })),
+      formacion: e.edu.map(x => ({ titulacion: x.degree, centro: x.institution, fin: x.end })),
+      habilidades: e.skills, competencias_personales: e.soft,
+      idiomas: e.langs.map(l => (l.name || '') + (l.level ? ': ' + l.level : '')),
+      certificaciones: e.certs, cursos: e.courses
+    };
+  }
+  // CV completo con las partes reescritas por la IA (el resto sale de los datos de la persona, o de su versión traducida si coincide el idioma)
+  function proMerged() {
+    const res = PRO.s && PRO.s.result; if (!res) return null;
+    const ed = PRO.s.edit || state.edit, trs = PRO.s.trans || state.trans;
+    const base = JSON.parse(JSON.stringify(PRO.s.lang !== (PRO.s.cvLang || origLang()) && trs[PRO.s.lang] ? trs[PRO.s.lang] : ed));
+    const cv = res.cv || {};
+    if (cv.titular) base.headline = cv.titular;
+    if (cv.perfil) { base.summary = cv.perfil; base.draft = ''; }
+    (cv.experiencia || []).forEach(x => { const t = base.exp[x.indice]; if (t) { if (x.puesto) t.title = x.puesto; if (x.descripcion) t.desc = x.descripcion; } });
+    (cv.proyectos || []).forEach(x => { const t = base.projects[x.indice]; if (t && x.descripcion) t.desc = x.descripcion; });
+    if (cv.habilidades) base.skills = cv.habilidades;
+    return base;
+  }
+  function proTplOpts() { return Object.assign(tplOpts(), { lang: PRO.s.lang }); }
+  function proScores() {
+    const offer = PRO.s.offer, opts = Object.assign(currentOpts(), { offer });
+    const before = E.analyze({ text: PRO.s.text || state.text, meta: PRO.s.meta || state.meta, opts });
+    const after = E.analyze({ text: T.toText(T.blocks(proMerged(), proTplOpts())), meta: Object.assign({}, PRO.s.meta || state.meta, { fileType: 'pdf', columns: false, tables: 0, textBoxes: 0, headerFooterContact: false, tinyText: 0, spaced: 0, fonts: 2 }), opts });
+    return { before: { total: before.total, kw: before.offer ? before.offer.score : 0 }, after: { total: after.total, kw: after.offer ? after.offer.score : 0 }, missing: after.offer ? after.offer.keywords.filter(k => !k.found).map(k => k.term).slice(0, 10) : [] };
+  }
+
+  function renderPro() {
+    const v = $('#v-pro'); if (!v) return;
+    // reclamo en el resumen y en ofertas
+    $$('.pro-promo').forEach(x => x.remove());
+    if (PRO.available && !state.sample) {
+      const promo = '<div class="pro-promo"><div><span class="label">Informe Pro · ' + PRO.price + '</span><strong>Adapta tu CV a una oferta concreta</strong><p>CV reescrito para esa oferta, carta de presentación y encaje requisito a requisito, con la puntuación ATS antes y después.</p></div><button class="btn primary" type="button" data-goto-pro>Ver el Informe Pro</button></div>';
+      const first = $('#v-resumen > *'); if (first) first.insertAdjacentHTML('afterend', promo);
+      const of = $('#v-ofertas'); if (of && of.firstElementChild) of.insertAdjacentHTML('beforeend', promo);
+      $$('[data-goto-pro]').forEach(b => b.addEventListener('click', () => go('pro')));
+    }
+    if (!PRO.available) { v.innerHTML = '<div class="sheet"><h3>Informe Pro</h3><p class="lede">El informe de pago no está disponible en esta versión.</p></div>'; return; }
+    const s = PRO.s;
+    if (s && s.phase === 'generating') return; // el panel de progreso ya está en pantalla
+    if (s && s.result) { renderProResult(v); return; }
+    if (s && s.phase === 'error') { renderProError(v); return; }
+    renderProSale(v);
+  }
+  function renderProSale(v) {
+    const offer = (PRO.s && PRO.s.offer) || getOffers()[0] || '';
+    const lang = proLang();
+    v.innerHTML = '<div class="sheet pro-hero"><span class="label">Informe Pro · pago único de ' + PRO.price + '</span><h3>Tu CV adaptado a la oferta que te interesa</h3>' +
+      '<p class="lede">El análisis gratuito te dice qué falla en tu CV. El Informe Pro lo arregla para una oferta concreta: reescribe tu perfil y tus experiencias con las palabras clave que busca esa empresa, escribe la carta de presentación y te dice, requisito a requisito, cómo encajas.</p>' +
+      '<div class="pro-feats">' +
+      '<div><strong>CV reescrito para la oferta</strong><p>Perfil, titular, experiencias y habilidades adaptados. Descárgalo en PDF o Word, con enlaces clicables. No inventa nada: si falta un dato, te lo marca.</p></div>' +
+      '<div><strong>Carta de presentación</strong><p>Personalizada con tus logros reales y lo que pide la oferta. Editable, en PDF o Word.</p></div>' +
+      '<div><strong>Encaje y puntuación ATS</strong><p>Cada requisito, marcado como «cumple», «parcial» o «no cumple», con la puntuación ATS antes y después de adaptar el CV.</p></div></div>' +
+      '<div class="tablewrap"><table class="cmp pro-cmp"><thead><tr><th></th><th>Gratis</th><th>Informe Pro</th></tr></thead><tbody>' +
+      [['Puntuación ATS, puntos fuertes y débiles', 1, 1], ['Coincidencia de palabras clave con ofertas', 1, 1], ['Datos para copiar y CV en formato ATS', 1, 1], ['Versión en inglés (traducción manual)', 1, 1], ['CV reescrito para una oferta concreta', 0, 1], ['Carta de presentación personalizada', 0, 1], ['Encaje requisito a requisito y ATS antes/después', 0, 1], ['Resultado en español o en inglés', 0, 1]]
+        .map(([t, a, b]) => '<tr><td>' + t + '</td><td>' + (a ? '<span class="yes">Sí</span>' : '<span class="no">—</span>') + '</td><td>' + (b ? '<span class="yes">Sí</span>' : '—') + '</td></tr>').join('') +
+      '</tbody></table></div></div>' +
+      '<div class="sheet"><h3>Prepara tu informe</h3>' +
+      (state.sample ? '<p class="banner">Primero sube tu CV con «Subir CV»: el informe se hace sobre tu currículum, no sobre el de ejemplo.</p>' : '') +
+      '<div class="field"><label class="label" for="proOffer">Oferta de trabajo</label><textarea id="proOffer" rows="8" placeholder="Pega la oferta completa: título del puesto, empresa, funciones y requisitos">' + h(offer) + '</textarea><span class="small muted" id="proOfferHint"></span></div>' +
+      '<div class="field pro-lang"><label class="label" for="proLang">Idioma del informe</label><select id="proLang"><option value="es"' + (lang === 'es' ? ' selected' : '') + '>Español</option><option value="en"' + (lang === 'en' ? ' selected' : '') + '>Inglés</option></select></div>' +
+      '<label class="toggle consent"><input type="checkbox" id="proC1"> <span>Acepto que el texto de mi CV (sin mi nombre ni mis datos de contacto) y la oferta se envíen a Anthropic, el proveedor de IA, solo para generar este informe. No se guardan en esta web. <a href="privacidad.html#informe-pro" target="_blank" rel="noopener">Más información</a></span></label>' +
+      '<label class="toggle consent"><input type="checkbox" id="proC2"> <span>Quiero recibir el informe en cuanto pague y acepto que, una vez generado, pierdo el derecho de desistimiento. <a href="condiciones.html" target="_blank" rel="noopener">Condiciones de venta</a></span></label>' +
+      '<div class="toolbar"><button class="btn primary" type="button" id="proPay" disabled>Pagar ' + PRO.price + ' y generar el informe</button><span class="small muted">Pago seguro con Stripe · IVA incluido · Hasta ' + PRO.max + ' generaciones durante 30 días</span></div>' +
+      '<p class="small" id="proMsg" role="status"></p></div>';
+    const upd = () => {
+      const t = $('#proOffer').value.trim();
+      $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos).' : '';
+      $('#proPay').disabled = state.sample || t.length < 150 || !$('#proC1').checked || !$('#proC2').checked;
+    };
+    ['#proOffer', '#proC1', '#proC2'].forEach(s => $(s).addEventListener('input', upd));
+    $('#proC1').addEventListener('change', upd); $('#proC2').addEventListener('change', upd);
+    upd();
+    $('#proPay').addEventListener('click', proCheckout);
+  }
+  async function proCheckout() {
+    const btn = $('#proPay'), msg = $('#proMsg');
+    btn.disabled = true; msg.className = 'small'; msg.textContent = 'Preparando el pago seguro…';
+    const pending = { text: state.text, meta: state.meta, label: state.label, edit: state.edit, trans: state.trans, tpl: state.tpl, country: $('#country').value, company: $('#company').value, offer: $('#proOffer').value.trim(), lang: $('#proLang').value, cvLang: origLang(), at: Date.now() };
+    await idbSet('pro-pending', pending);
+    try {
+      const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.url) throw new Error(d.error || 'stripe_no_disponible');
+      location.href = d.url;
+    } catch (e) {
+      msg.className = 'small err'; msg.textContent = PRO_ERR[e.message] || PRO_ERR.stripe_no_disponible; btn.disabled = false;
+    }
+  }
+  // al volver de Stripe: recupera el CV y la oferta guardados y genera el informe
+  async function proReturn(param) {
+    try { history.replaceState(null, '', location.pathname + '#pro'); } catch (e) { }
+    const p = await idbGet('pro-pending');
+    if (p && p.text) {
+      state.text = p.text; state.meta = p.meta || {}; state.label = p.label || ''; state.sample = false;
+      state.edit = p.edit || null; state.trans = p.trans || {}; state.tpl = p.tpl || state.tpl;
+      if (p.country && D.COUNTRIES[p.country]) $('#country').value = p.country;
+      if (p.company && D.COMPANY_TYPES[p.company]) $('#company').value = p.company;
+      run(false);
+    }
+    if (param === 'cancelado') { PRO.s = p ? { offer: p.offer, lang: p.lang } : null; renderPro(); go('pro'); toast('Pago cancelado: no se ha cobrado nada'); return; }
+    if (!p) { PRO.s = { session: param, phase: 'error', error: 'sin_datos' }; renderPro(); go('pro'); return; }
+    const saved = await idbGet('pro-result:' + param);
+    PRO.s = { session: param, offer: p.offer, lang: p.lang, cvLang: p.cvLang, edit: p.edit, trans: p.trans, text: p.text, meta: p.meta, result: saved && saved.result, used: saved && saved.used };
+    go('pro');
+    if (PRO.s.result) { renderPro(); return; }
+    proGenerate();
+  }
+  function proProgress(v) {
+    v.innerHTML = '<div class="analyzing pro-gen"><div class="an-doc" aria-hidden="true">' + $('#analyzing .an-doc').innerHTML + '</div><div class="an-body"><span class="label">Informe Pro</span><strong>Generando tu informe</strong><div class="an-progress" aria-hidden="true"><i id="proBar"></i></div><ol class="an-steps" id="proSteps">' + PRO_STEPS.map(s => '<li>' + h(s) + '</li>').join('') + '</ol><p class="small muted">Suele tardar entre 30 y 60 segundos. No cierres esta pestaña.</p></div><p class="sr-only" id="proLive" role="status" aria-live="polite"></p></div>';
+  }
+  function proStep(i, pct) {
+    $$('#proSteps li').forEach((li, k) => { li.className = k < i ? 'ok' : k === i ? 'on' : ''; });
+    const bar = $('#proBar'); if (bar) bar.style.width = Math.max(4, Math.min(98, pct)) + '%';
+    const live = $('#proLive'); if (live && PRO_STEPS[i] && live.textContent !== PRO_STEPS[i]) live.textContent = PRO_STEPS[i] + '…';
+  }
+  async function proGenerate() {
+    const s = PRO.s; s.phase = 'generating'; s.error = '';
+    if (!s.edit) Object.assign(s, { edit: state.edit, trans: state.trans, text: state.text, meta: state.meta, cvLang: origLang() });
+    const v = $('#v-pro'); proProgress(v); proStep(0, 4);
+    let acc = '', step = 0, extra = null;
+    try {
+      const r = await fetch('/api/generate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ session_id: s.session, offer: s.offer, lang: s.lang, country: (state.r && state.r.country && state.r.country.name) || '', cv: proCvPayload() }) });
+      if (!r.ok || !r.body) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'ia_no_disponible'); }
+      step = 1; proStep(1, 8);
+      const reader = r.body.getReader(), dec = new TextDecoder(); let buf = '', ended = false, ev = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, i).replace(/\r$/, ''); buf = buf.slice(i + 1);
+          if (line.startsWith('event:')) { ev = line.slice(6).trim(); continue; }
+          if (!line.startsWith('data:')) continue;
+          let d; try { d = JSON.parse(line.slice(5)); } catch (e) { continue; }
+          if (ev === 'informe_pro') extra = d;
+          else if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'input_json_delta') acc += d.delta.partial_json || '';
+          else if (d.type === 'message_stop') ended = true;
+          else if (d.type === 'error') throw new Error(d.error && /overload/i.test(d.error.type || '') ? 'ia_saturada' : 'ia_no_disponible');
+        }
+        const ns = acc.includes('"carta"') ? 4 : acc.includes('"cv"') ? 3 : acc.includes('"requisitos"') ? 2 : 1;
+        if (ns > step) step = ns;
+        proStep(step, 8 + Math.min(88, acc.length / 90));
+      }
+      if (!ended) throw new Error('red');
+      const res = JSON.parse(acc);
+      if (!res || !res.cv || !res.carta || !res.encaje) throw new Error('ia_no_disponible');
+      s.result = res; s.used = extra ? extra.generaciones : (s.used || 0) + 1; s.phase = 'done';
+      proStep(5, 100);
+      await idbSet('pro-result:' + s.session, proRecord()); await idbSet('pro-last', s.session);
+      await wait(reduceMotion() ? 0 : 350);
+      renderPro();
+      if (!reduceMotion()) { v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
+      toast('Informe listo');
+    } catch (e) {
+      console.error(e);
+      s.phase = 'error'; s.error = e && e.message in PRO_ERR ? e.message : (e && e.name === 'TypeError' ? 'red' : 'ia_no_disponible');
+      renderPro();
+    }
+  }
+  function renderProError(v) {
+    const s = PRO.s, retry = s.error !== 'limite_generaciones' && s.error !== 'pedido_caducado' && s.error !== 'sin_datos' && s.session;
+    v.innerHTML = '<div class="sheet"><h3>No se ha podido generar el informe</h3><p class="lede">' + h(PRO_ERR[s.error] || (s.error === 'sin_datos' ? 'Has vuelto del pago en otro navegador o se ha borrado el CV guardado. Sube tu CV de nuevo y pulsa «Reintentar»: el pedido sigue siendo válido.' : PRO_ERR.ia_no_disponible)) + '</p>' +
+      '<div class="toolbar">' + (retry ? '<button class="btn primary" type="button" id="proRetry">Reintentar</button>' : '') + '<a class="btn" href="mailto:nazarblanco@gmail.com?subject=' + encodeURIComponent('Informe Pro · pedido ' + (s.session || '').slice(-10)) + '">Escribir al soporte</a></div>' +
+      (s.session ? '<p class="small muted">Referencia del pedido: …' + h(String(s.session).slice(-10)) + '</p>' : '') + '</div>';
+    if ($('#proRetry')) $('#proRetry').addEventListener('click', () => { if (state.sample) { s.error = 'sin_datos'; renderPro(); return; } proGenerate(); });
+  }
+  const ST = { cumple: ['ok', 'Cumple'], parcial: ['warn', 'Parcial'], no_cumple: ['bad', 'No cumple'] };
+  function renderProResult(v) {
+    const s = PRO.s, res = s.result, en = res.encaje || {}, sc = proScores(), m = proMerged(), letter = res.carta || {};
+    const left = Math.max(0, PRO.max - (s.used || 1));
+    const delta = (a, b, unit) => '<div class="delta"><span class="num">' + a + unit + '</span><span aria-hidden="true">→</span><b class="num">' + b + unit + '</b>' + (b > a ? '<em>+' + (b - a) + '</em>' : '') + '</div>';
+    const reqs = (en.requisitos || []).map(r => '<li class="check s-' + (ST[r.estado] || ST.parcial)[0] + '"><span class="pill ' + (ST[r.estado] || ST.parcial)[0] + '">' + (ST[r.estado] || ST.parcial)[1] + '</span><div><strong>' + h(r.requisito) + (r.tipo === 'imprescindible' ? ' <span class="small muted">· imprescindible</span>' : '') + '</strong><p>' + h(r.evidencia) + '</p></div></li>').join('');
+    const missing = (en.palabras_clave_faltan || []).map(k => '<span class="chip kw">' + h(k) + '</span>').join('');
+    const tips = (en.consejos || []).map(t => '<li>' + h(t) + '</li>').join('');
+    const warns = (res.avisos || []).map(t => '<li>' + h(t) + '</li>').join('');
+    const cv = res.cv || {};
+    const expEd = (cv.experiencia || []).map(x => { const o = m.exp[x.indice]; return o ? '<div class="cf"><label class="label" for="pe' + x.indice + '">' + h([o.title, o.company].filter(Boolean).join(' — ')) + '</label><textarea id="pe' + x.indice + '" rows="' + Math.min(8, Math.max(3, String(x.descripcion || '').split('\n').length + 1)) + '" data-pro="exp.' + x.indice + '">' + h(x.descripcion) + '</textarea><div class="side"><button class="btn small" type="button" data-copy="pe' + x.indice + '">Copiar</button></div></div>' : ''; }).join('');
+    v.innerHTML = '<div class="sheet pro-head"><div><span class="label">Informe Pro · ' + (s.lang === 'en' ? 'en inglés' : 'en español') + '</span><h3>' + h((s.offer || '').split('\n').find(l => l.trim()) || 'Tu oferta') + '</h3><p class="small muted">Revisa todo antes de enviarlo: la IA puede equivocarse, y lo que va entre corchetes tienes que completarlo tú.</p></div>' +
+      '<div class="pro-actions"><button class="btn" type="button" id="proNew">Otra oferta (nuevo pago)</button>' + (left > 0 ? '<button class="btn" type="button" id="proAgain">Generar de nuevo (' + left + (left === 1 ? ' restante' : ' restantes') + ')</button>' : '') + '<button class="btn" type="button" id="proForget">Borrar de este navegador</button></div></div>' +
+      '<div class="cols"><div class="sheet"><h3>Encaje con la oferta</h3><div class="pro-score"><div class="pro-ring" style="--v:' + (en.puntuacion || 0) + '"><b class="num">' + (en.puntuacion || 0) + '</b><small>/100</small></div><p>' + h(en.veredicto || '') + '</p></div>' +
+      '<div class="pro-deltas"><div><span class="label">Palabras clave de la oferta</span>' + delta(sc.before.kw, sc.after.kw, ' %') + '</div><div><span class="label">Puntuación ATS global</span>' + delta(sc.before.total, sc.after.total, '') + '</div></div>' +
+      '<p class="small muted">Puntuación ATS calculada por el analizador con tu CV original y con el CV adaptado, frente a la misma oferta.</p></div>' +
+      '<div class="sheet"><h3>Antes de enviar</h3>' + (tips ? '<ol class="prio">' + tips + '</ol>' : '') + (missing ? '<p class="label" style="margin-top:12px">Palabras de la oferta que no aparecen en tu CV</p><div class="chips">' + missing + '</div><p class="small muted">Añádelas solo si de verdad tienes esa experiencia.</p>' : '') + (warns ? '<div class="callout warn"><strong>Completa o comprueba</strong><ul>' + warns + '</ul></div>' : '') + '</div></div>' +
+      '<div class="sheet"><h3>Requisito a requisito</h3><ul class="checks">' + (reqs || '<li>No se han identificado requisitos.</li>') + '</ul></div>' +
+      '<div class="sheet"><h3>Tu CV adaptado</h3><p class="lede">Puedes retocar cualquier texto: las descargas usan lo que ves aquí. Formación, idiomas y contacto salen de tus datos.</p>' +
+      '<div class="cf"><label class="label" for="pTit">Titular</label><input type="text" id="pTit" data-pro="titular" value="' + h(cv.titular || '') + '"><div class="side"><button class="btn small" type="button" data-copy="pTit">Copiar</button></div></div>' +
+      '<div class="cf"><label class="label" for="pPer">Perfil</label><textarea id="pPer" rows="5" data-pro="perfil">' + h(cv.perfil || '') + '</textarea><div class="side"><button class="btn small" type="button" data-copy="pPer">Copiar</button></div></div>' + expEd +
+      '<div class="cf"><label class="label" for="pHab">Habilidades</label><textarea id="pHab" rows="3" data-pro="habilidades">' + h(cv.habilidades || '') + '</textarea><div class="side"><button class="btn small" type="button" data-copy="pHab">Copiar</button></div></div>' +
+      '<div class="toolbar">' + (DL ? '<button class="btn primary" type="button" id="proCvPdf">Descargar CV en PDF</button><button class="btn" type="button" id="proCvDocx">Descargar CV en Word</button>' : '') + '<button class="btn" type="button" id="proCvTxt">Copiar CV como texto</button></div></div>' +
+      '<div class="sheet"><h3>Carta de presentación</h3>' +
+      '<div class="cf"><label class="label" for="pAs">Asunto</label><input type="text" id="pAs" data-pro="carta.asunto" value="' + h(letter.asunto || '') + '"><div class="side"><button class="btn small" type="button" data-copy="pAs">Copiar</button></div></div>' +
+      '<div class="cf"><label class="label" for="pCarta">Carta</label><textarea id="pCarta" rows="14" data-pro="carta.texto">' + h(proLetterText(letter)) + '</textarea><div class="side"><button class="btn small" type="button" data-copy="pCarta">Copiar</button></div></div>' +
+      '<div class="toolbar">' + (DL ? '<button class="btn primary" type="button" id="proLetPdf">Descargar carta en PDF</button><button class="btn" type="button" id="proLetDocx">Descargar carta en Word</button>' : '') + '</div></div>';
+    $$('#v-pro [data-pro]').forEach(inp => inp.addEventListener('input', () => { proApplyEdit(inp.dataset.pro, inp.value); proSaveSoon(); }));
+    $$('#v-pro [data-copy]').forEach(b => b.addEventListener('click', () => { const el = document.getElementById(b.dataset.copy); copyText(el.value, el); }));
+    if ($('#proAgain')) $('#proAgain').addEventListener('click', () => { if (confirm('Se generará un informe nuevo y se gastará uno de los intentos incluidos. ¿Continuar?')) { s.result = null; proGenerate(); } });
+    $('#proForget').addEventListener('click', async () => { if (!confirm('Se borrará el informe de este navegador. Podrás volver a generarlo mientras te queden intentos, desde el enlace de tu recibo. ¿Borrarlo?')) return; await idbDel('pro-result:' + s.session); await idbDel('pro-pending'); await idbDel('pro-last'); PRO.s = null; renderPro(); toast('Informe borrado de este navegador'); });
+    $('#proNew').addEventListener('click', () => { PRO.s = { offer: '', lang: s.lang }; renderPro(); });
+    const base = ((s.edit || state.edit).name || 'CV').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'CV';
+    const sfx = s.lang === 'en' ? '-EN' : '';
+    $('#proCvTxt').addEventListener('click', () => copyText(T.toText(T.blocks(proMerged(), proTplOpts()))));
+    if (DL) {
+      $('#proCvPdf').addEventListener('click', async () => { try { const L = await window.CV_LIBS.pdflib(); await DL(await T.toPdf(T.blocks(proMerged(), proTplOpts()), proTplOpts(), L), base + '-CV-oferta' + sfx + '.pdf'); } catch (e) { console.error(e); toast('No se pudo generar el PDF'); } });
+      $('#proCvDocx').addEventListener('click', async () => { try { const Z = await window.CV_LIBS.jszip(); await DL(await T.toDocx(T.blocks(proMerged(), proTplOpts()), proTplOpts(), Z), base + '-CV-oferta' + sfx + '.docx'); } catch (e) { toast('No se pudo generar el Word'); } });
+      $('#proLetPdf').addEventListener('click', async () => { try { const L = await window.CV_LIBS.pdflib(); await DL(await T.toPdf(proLetterBlocks(), proTplOpts(), L), base + '-carta' + sfx + '.pdf'); } catch (e) { console.error(e); toast('No se pudo generar el PDF'); } });
+      $('#proLetDocx').addEventListener('click', async () => { try { const Z = await window.CV_LIBS.jszip(); await DL(await T.toDocx(proLetterBlocks(), proTplOpts(), Z), base + '-carta' + sfx + '.docx'); } catch (e) { toast('No se pudo generar el Word'); } });
+    }
+  }
+  const proLetterText = c => c.texto != null ? c.texto : [c.saludo, c.cuerpo, c.despedida, ((PRO.s && PRO.s.edit) || state.edit || {}).name].filter(Boolean).join('\n\n');
+  function proLetterBlocks() {
+    const e = PRO.s.edit || state.edit, c = PRO.s.result.carta;
+    const B = [{ t: 'name', text: e.name || '' }, { t: 'contact', text: [e.location, e.phone, e.email, e.linkedin, e.web].filter(Boolean).join('  ·  ') }];
+    if (c.asunto) B.push({ t: 'h', text: c.asunto });
+    proLetterText(c).split(/\n\s*\n/).map(x => x.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean).forEach(p => B.push({ t: 'p', text: p }));
+    return B;
+  }
+  function proApplyEdit(path, val) {
+    const r = PRO.s.result, cv = r.cv;
+    if (path === 'titular' || path === 'perfil' || path === 'habilidades') cv[path] = val;
+    else if (path.startsWith('exp.')) { const i = +path.slice(4), x = (cv.experiencia || []).find(y => y.indice === i); if (x) x.descripcion = val; }
+    else if (path === 'carta.asunto') r.carta.asunto = val;
+    else if (path === 'carta.texto') r.carta.texto = val;
+  }
+  let proSaveT = 0;
+  function proSaveSoon() { clearTimeout(proSaveT); proSaveT = setTimeout(() => { const s = PRO.s; if (s && s.result) idbSet('pro-result:' + s.session, proRecord()); }, 600); }
+  const proRecord = () => { const s = PRO.s; return { result: s.result, used: s.used, offer: s.offer, lang: s.lang, cvLang: s.cvLang, edit: s.edit, trans: s.trans, text: s.text, meta: s.meta, at: Date.now() }; };
+  async function proInit() {
+    if (BUILD !== 'selfhost') return;
+    try {
+      const r = await fetch('/api/estado', { headers: { accept: 'application/json' } });
+      const d = r.ok ? await r.json() : null;
+      PRO.available = !!(d && d.disponible);
+    } catch (e) { PRO.available = false; }
+    const navA = $('#tabs a[data-view="pro"]'); if (navA) navA.hidden = !PRO.available;
+    badge('pro', PRO.available ? PRO.price : null, 'price');
+    const q = new URLSearchParams(location.search).get('pro');
+    if (PRO.available && q) { await proReturn(q); return; }
+    const last = PRO.available && await idbGet('pro-last'), rec = last && await idbGet('pro-result:' + last);
+    if (rec && rec.result) PRO.s = Object.assign({ session: last }, rec);
+    if (state.r) renderPro();
+  }
+
   // ---------- navegación ----------
   function go(view, push) {
     if (!VIEWS.includes(view)) view = 'resumen';
@@ -648,7 +935,7 @@
     state.text = window.CV_SAMPLE.text; state.meta = window.CV_SAMPLE.meta; state.sample = true;
     run(true);
     go(location.hash.slice(1) || 'resumen', false);
-    if (BUILD === 'selfhost') takeHandoff();
+    if (BUILD === 'selfhost') { if (!new URLSearchParams(location.search).get('pro')) takeHandoff(); proInit(); }
   }
   // CV subido desde la página principal: llega por IndexedDB y se borra en cuanto se lee
   function takeHandoff() {

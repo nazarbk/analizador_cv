@@ -40,9 +40,15 @@ site/                 la web ya generada: es la carpeta que publica Netlify
   terminos.html       términos de uso
   _headers            cabeceras de seguridad (Netlify)
 netlify.toml          configuración de Netlify: publica site/ sin paso de compilación
+netlify/              Edge Functions del Informe Pro de pago (Stripe + API de Claude), sin dependencias
+docs/INFORME-PRO.md   qué es gratis y qué es de pago, cómo funciona el cobro y cómo activarlo
 package.json          versiones fijas de las librerías de terceros
 LICENSE               licencia MIT del código propio
 ```
+
+## Informe Pro (de pago)
+
+El análisis es gratuito y se hace en el navegador. El **Informe Pro (4,99 €)** adapta el CV a una oferta con IA: CV reescrito, carta de presentación y encaje requisito a requisito con la puntuación ATS antes y después. El cobro usa **Stripe Managed Payments** (Stripe es el vendedor registrado y gestiona el IVA) y la generación, la **API de Claude**. La sección se oculta sola mientras no estén configuradas las claves. Activación, variables de entorno y plan de prueba: [`docs/INFORME-PRO.md`](docs/INFORME-PRO.md).
 
 ## Desarrollo
 
@@ -54,7 +60,7 @@ LICENSE               licencia MIT del código propio
 
 Sube a GitHub también la carpeta `site/` regenerada: Netlify la publica tal cual.
 
-**Dirección de la web.** `build.py` usa `https://analizador-cv-nazar.netlify.app` para la URL canónica, el mapa del sitio y la vista previa en redes sociales. Si tu sitio de Netlify tiene otro nombre o conectas un dominio propio, cámbiala en `SITE_URL` (o ejecuta `CV_SITE_URL=https://tu-dominio python3 build.py`) y vuelve a generar la web.
+**Dirección de la web.** `build.py` usa `https://cv-analizador.netlify.app` para la URL canónica, el mapa del sitio y la vista previa en redes sociales. Si tu sitio de Netlify tiene otro nombre o conectas un dominio propio, cámbiala en `SITE_URL` (o ejecuta `CV_SITE_URL=https://tu-dominio python3 build.py`) y vuelve a generar la web.
 
 **Subida desde la página principal.** El botón «Sube tu CV» de la portada deja el archivo un instante en IndexedDB (almacenamiento local del navegador, mismo sitio) y abre `analizador.html`, que lo lee y lo borra en el acto. El archivo nunca sale del navegador.
 

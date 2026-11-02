@@ -30,7 +30,7 @@ VENDOR_ZIP_LICENSE = os.path.join(NM, 'jszip/LICENSE.markdown')
 SITE = os.path.join(ROOT, 'site')   # carpeta que publica Netlify (netlify.toml)
 # Dirección pública de la web (para la URL canónica, el mapa del sitio y las vistas previas en redes).
 # Cámbiala si tu sitio de Netlify tiene otro nombre o usas un dominio propio: CV_SITE_URL=https://... python3 build.py
-SITE_URL = os.environ.get('CV_SITE_URL', 'https://analizador-cv-nazar.netlify.app').rstrip('/')
+SITE_URL = os.environ.get('CV_SITE_URL', 'https://cv-analizador.netlify.app').rstrip('/')
 ASSETS = os.path.join(SRC, 'assets')
 AUTHOR = 'Nazar Blanco Kataran'
 import re as _re
@@ -89,7 +89,7 @@ ART_LIBS = ART_LIBS[:-2] + """,
 };""" % PDFLIB
 
 SELF_LIBS = """window.CV_BUILD = 'selfhost';
-window.CV_LEGAL_LINKS = [['Aviso legal', 'aviso-legal.html'], ['Privacidad', 'privacidad.html'], ['Términos de uso', 'terminos.html'], ['Código en GitHub', 'https://github.com/nazarbk']];
+window.CV_LEGAL_LINKS = [['Aviso legal', 'aviso-legal.html'], ['Privacidad', 'privacidad.html'], ['Términos de uso', 'terminos.html'], ['Condiciones de venta', 'condiciones.html'], ['Código en GitHub', 'https://github.com/nazarbk']];
 window.CV_AUTHOR = { name: 'Nazar Blanco Kataran', email: 'nazarblanco@gmail.com' };
 window.CV_LIBS = {
   pdfjs: async function () {
@@ -143,7 +143,8 @@ def build_landing(out, base_css):
         '@context': 'https://schema.org', '@type': 'WebApplication', 'name': 'Analizador de CV', 'url': SITE_URL + '/',
         'description': HOME_DESC, 'inLanguage': 'es', 'applicationCategory': 'BusinessApplication', 'operatingSystem': 'Cualquiera (navegador web)',
         'browserRequirements': 'Requiere JavaScript y un navegador actual', 'isAccessibleForFree': True,
-        'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'EUR'},
+        'offers': [{'@type': 'Offer', 'name': 'Análisis gratuito', 'price': '0', 'priceCurrency': 'EUR'},
+                   {'@type': 'Offer', 'name': 'Informe Pro: CV adaptado a una oferta y carta de presentación', 'price': '4.99', 'priceCurrency': 'EUR'}],
         'author': {'@type': 'Person', 'name': AUTHOR, 'url': 'https://github.com/nazarbk'},
         'image': SITE_URL + '/assets/og-image.png',
         'featureList': ['Compatibilidad con ATS e IA', 'Puntos fuertes y débiles', 'Coincidencia con ofertas de empleo', 'Datos listos para copiar en portales de empleo', 'CV en formato ATS en PDF y Word', 'Versión del CV en inglés', 'Formato por país', 'Comparación de versiones']
@@ -180,7 +181,7 @@ def copy_assets(out):
     open(os.path.join(out, 'site.webmanifest'), 'w', encoding='utf-8').write(json.dumps(manifest, ensure_ascii=False, indent=2))
     import datetime
     today = datetime.date.today().isoformat()
-    urls = [('', '1.0'), ('analizador.html', '0.9'), ('privacidad.html', '0.3'), ('aviso-legal.html', '0.2'), ('terminos.html', '0.2')]
+    urls = [('', '1.0'), ('analizador.html', '0.9'), ('condiciones.html', '0.3'), ('privacidad.html', '0.3'), ('aviso-legal.html', '0.2'), ('terminos.html', '0.2')]
     sm = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(
         '  <url><loc>%s/%s</loc><lastmod>%s</lastmod><priority>%s</priority></url>\n' % (SITE_URL, u, today, pr) for u, pr in urls) + '</urlset>\n'
     open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8').write(sm)
@@ -235,7 +236,13 @@ def build_selfhost():
     shutil.copytree(out, SITE)
     return out, zp
 
+def legal_check():
+    from legal import TITULAR_NIF, TITULAR_DOMICILIO
+    if '[' in TITULAR_NIF or '[' in TITULAR_DOMICILIO:
+        print('AVISO: faltan el NIF y el domicilio del titular en src/legal.py. Son obligatorios antes de cobrar (art. 10 LSSI-CE).')
+
 if __name__ == '__main__':
+    legal_check()
     p, size = build_artifact()
     print('artifact', p, size, 'bytes')
     print('selfhost', *build_selfhost())

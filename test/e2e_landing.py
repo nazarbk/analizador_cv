@@ -14,7 +14,7 @@ try:
         pg.on('console', lambda m: errs.append('console ' + m.text) if m.type == 'error' else None)
         pg.goto(B); pg.wait_for_selector('.lp-hero h1')
         print('title:', pg.title())
-        ld = json.loads(pg.text_content('script[type="application/ld+json"]')); print('json-ld:', ld['@type'], ld['offers']['price'])
+        ld = json.loads(pg.text_content('script[type="application/ld+json"]')); print('json-ld:', ld['@type'], [o['price'] for o in ld['offers']])
         for path in ['favicon.ico', 'assets/icon.svg', 'apple-touch-icon.png', 'site.webmanifest', 'assets/og-image.png', 'sitemap.xml', 'robots.txt']:
             r = pg.request.get(B + path); print(' ', path, r.status)
         pg.screenshot(path=os.path.join(OUT, 'landing_desktop.png'))
