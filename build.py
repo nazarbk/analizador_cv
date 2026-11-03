@@ -30,7 +30,7 @@ VENDOR_ZIP_LICENSE = os.path.join(NM, 'jszip/LICENSE.markdown')
 SITE = os.path.join(ROOT, 'site')   # carpeta que publica Netlify (netlify.toml)
 # Dirección pública de la web (para la URL canónica, el mapa del sitio y las vistas previas en redes).
 # Cámbiala si tu sitio de Netlify tiene otro nombre o usas un dominio propio: CV_SITE_URL=https://... python3 build.py
-SITE_URL = os.environ.get('CV_SITE_URL', 'https://cv-analizador.netlify.app').rstrip('/')
+SITE_URL = os.environ.get('CV_SITE_URL', 'https://analizadorcv.com').rstrip('/')
 ASSETS = os.path.join(SRC, 'assets')
 AUTHOR = 'Nazar Blanco Kataran'
 import re as _re

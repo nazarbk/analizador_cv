@@ -76,7 +76,7 @@ Site configuration → Environment variables:
 | `STRIPE_SECRET_KEY` | `sk_test_…` (luego `sk_live_…`) |
 | `STRIPE_PRICE_ID` | `price_…` del paso 3.2 (si no se indica, se usa 4,99 € definido en el código) |
 | `ANTHROPIC_API_KEY` | `sk-ant-…` |
-| `SITE_URL` | `https://cv-analizador.netlify.app` |
+| `SITE_URL` | `https://analizadorcv.com` |
 | `ANTHROPIC_MODEL` | opcional; por defecto `claude-sonnet-5-5` |
 | `STRIPE_MANAGED_PAYMENTS` | opcional; `false` para probar sin Managed Payments mientras Stripe lo aprueba |
 | `STRIPE_API_VERSION` | opcional; por defecto `2026-04-22.dahlia` (la primera que admite `managed_payments`) |

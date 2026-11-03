@@ -60,7 +60,7 @@ El análisis es gratuito y se hace en el navegador. El **Informe Pro (4,99 €)*
 
 Sube a GitHub también la carpeta `site/` regenerada: Netlify la publica tal cual.
 
-**Dirección de la web.** `build.py` usa `https://cv-analizador.netlify.app` para la URL canónica, el mapa del sitio y la vista previa en redes sociales. Si tu sitio de Netlify tiene otro nombre o conectas un dominio propio, cámbiala en `SITE_URL` (o ejecuta `CV_SITE_URL=https://tu-dominio python3 build.py`) y vuelve a generar la web.
+**Dirección de la web.** `build.py` usa `https://analizadorcv.com` para la URL canónica, el mapa del sitio y la vista previa en redes sociales. Si tu sitio de Netlify tiene otro nombre o conectas un dominio propio, cámbiala en `SITE_URL` (o ejecuta `CV_SITE_URL=https://tu-dominio python3 build.py`) y vuelve a generar la web.
 
 **Subida desde la página principal.** El botón «Sube tu CV» de la portada deja el archivo un instante en IndexedDB (almacenamiento local del navegador, mismo sitio) y abre `analizador.html`, que lo lee y lo borra en el acto. El archivo nunca sale del navegador.
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cv-analizador.netlify.app/sitemap.xml
+Sitemap: https://analizadorcv.com/sitemap.xml
