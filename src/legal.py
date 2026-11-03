@@ -1,8 +1,8 @@
 # Textos legales de la versión autoalojada (alojada en Netlify), con un informe de pago (Informe Pro).
 # Al haber actividad económica, el aviso legal debe identificar al titular con NIF y domicilio (art. 10 LSSI-CE).
 # Rellena TITULAR_NIF y TITULAR_DOMICILIO antes de activar los pagos en producción: build.py avisa si siguen vacíos.
-TITULAR_NIF = '[NIF]'
-TITULAR_DOMICILIO = '[DOMICILIO]'
+TITULAR_NIF = '44735175Z'
+TITULAR_DOMICILIO = 'Av. Alicante, 7, 03560 El Campello (Alicante)'
 PAGES = {
 "aviso-legal.html": ("Aviso legal", """
 <h2>Titular</h2>
