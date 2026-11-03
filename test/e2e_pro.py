@@ -109,6 +109,39 @@ def ai_fail(port):
             b.close()
     finally: srv.terminate()
 
+def refund(port):
+    srv = start(port); B = f'http://127.0.0.1:{port}/'
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(); ctx, pg = page(b)
+            pg.goto(B + 'analizador.html'); pg.wait_for_selector('#tabs a[data-view=pro]:not([hidden])'); upload(pg, CV1); pay(pg)
+            pg.wait_for_selector(REPORT, timeout=30000)
+            sid = mlog(port)['sessions'][0]['id']
+            urllib.request.urlopen(B + '__refund?session=' + sid).read()
+            st = json.loads(urllib.request.urlopen(B + 'api/estado?session_id=' + sid).read())
+            check('estado de una compra devuelta = reembolsado', st.get('estado') == 'reembolsado' and st.get('restantes') == 0)
+            pg.click('#proNew'); pg.wait_for_selector('#proUse'); pg.fill('#proOffer', OFFER); pg.check('#proC1'); pg.click('#proUse')
+            pg.wait_for_selector('#v-pro .lede:has-text("devuelto")', timeout=30000)
+            check('generar con una compra devuelta → mensaje claro y no se llama a la IA', mlog(port)['aiCalls'] == 1)
+            pg.wait_for_timeout(800)
+            check('tras la devolución ya no ofrece informes de esa compra', pg.evaluate("()=>!document.querySelector('#proUse')") or 'te quedan' not in (pg.text_content('#v-pro') or ''))
+            check('el informe ya generado sigue guardado', pg.locator('#v-pro .pro-reports li, #v-pro .pro-reports a').count() >= 1)
+            b.close()
+    finally: srv.terminate()
+
+def no_charges_perm(port):
+    srv = start(port, MOCK_NO_CHARGES='1'); B = f'http://127.0.0.1:{port}/'
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(); ctx, pg = page(b)
+            pg.goto(B + 'analizador.html'); pg.wait_for_selector('#tabs a[data-view=pro]:not([hidden])'); upload(pg, CV1); pay(pg)
+            pg.wait_for_selector(REPORT, timeout=30000)
+            check('clave sin permiso de cargos: el informe se genera igual', mlog(port)['sessions'][0]['gen'] == 1)
+            b.close()
+    finally: srv.terminate()
+
 print('== flujo completo'); main_flow(8821)
 print('== IA saturada en el primer intento'); ai_fail(8822)
+print('== compra devuelta'); refund(8823)
+print('== clave sin permiso de cargos'); no_charges_perm(8824)
 print('errors', errs)

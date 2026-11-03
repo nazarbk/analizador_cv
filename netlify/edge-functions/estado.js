@@ -9,7 +9,7 @@ export default async (req) => {
   const v = await verifyPurchase(id);
   const base = { disponible: true, max: MAX_GENERATIONS, caduca: v.caduca || null };
   if (v.ok) return json(Object.assign(base, { estado: 'pagado', restantes: MAX_GENERATIONS - v.used }));
-  const estado = { pago_no_completado: 'pendiente', limite_generaciones: 'agotado', pedido_caducado: 'caducado', pedido_no_encontrado: 'no_existe', pedido_no_valido: 'no_existe' }[v.error] || 'desconocido';
+  const estado = { pago_no_completado: 'pendiente', limite_generaciones: 'agotado', pedido_caducado: 'caducado', pedido_reembolsado: 'reembolsado', pedido_no_encontrado: 'no_existe', pedido_no_valido: 'no_existe' }[v.error] || 'desconocido';
   return json(Object.assign(base, { estado, restantes: 0, error: v.error }));
 };
 export const config = { path: '/api/estado' };

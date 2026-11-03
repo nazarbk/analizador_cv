@@ -57,9 +57,24 @@ export async function verifyPurchase(sessionId) {
   if (caduca && Date.now() > caduca) return { ok: false, status: 410, error: 'pedido_caducado', caduca };
   const piId = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent && s.payment_intent.id;
   let used = 0;
-  if (piId) { const pi = await stripe('GET', '/payment_intents/' + encodeURIComponent(piId)); used = parseInt((pi.metadata || {}).generaciones || '0', 10) || 0; }
+  if (piId) {
+    let pi;
+    try { pi = await readPaymentIntent(piId); }
+    catch (e) { return { ok: false, status: 502, error: 'stripe_no_disponible', caduca }; }
+    used = parseInt((pi.metadata || {}).generaciones || '0', 10) || 0;
+    // Una compra devuelta o en disputa deja de dar informes.
+    const ch = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
+    if (ch && (ch.refunded || ch.disputed)) return { ok: false, status: 402, error: 'pedido_reembolsado', used, caduca };
+  }
   if (used >= MAX_GENERATIONS) return { ok: false, status: 429, error: 'limite_generaciones', used, caduca };
   return { ok: true, piId, used, caduca, email: s.customer_details && s.customer_details.email };
+}
+// Lee el pago con su cargo (para saber si se ha devuelto). Si la clave restringida no tiene el permiso
+// «Charges: lectura», lo lee sin el cargo: nunca bloquea una compra válida por falta de ese permiso.
+async function readPaymentIntent(piId) {
+  const base = '/payment_intents/' + encodeURIComponent(piId);
+  try { return await stripe('GET', base + '?expand%5B%5D=latest_charge'); }
+  catch (e) { if (e.status === 403 || e.status === 400) return await stripe('GET', base); throw e; }
 }
 export async function countGeneration(piId, used) {
   if (!piId) return;
