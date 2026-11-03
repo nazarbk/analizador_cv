@@ -1,6 +1,6 @@
 // POST /api/generate → comprueba el pago y genera el Informe Pro con la API de Claude, en streaming.
 // No guarda el CV ni la oferta: los reenvía a la API y devuelve la respuesta tal cual llega.
-import { env, json, verifyPurchase, countGeneration, validateInput, anthropicRequest } from '../shared/pro.js';
+import { env, json, verifyPurchase, countGeneration, validateInput, anthropicRequest, MAX_GENERATIONS } from '../shared/pro.js';
 
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'metodo_no_permitido' }, 405);
@@ -30,7 +30,7 @@ export default async (req) => {
       }
       if (finished) {
         try { await countGeneration(v.piId, v.used); } catch (e) { console.error('contador', e.message); }
-        await w.write(new TextEncoder().encode('event: informe_pro\ndata: ' + JSON.stringify({ generaciones: v.used + 1 }) + '\n\n'));
+        await w.write(new TextEncoder().encode('event: informe_pro\ndata: ' + JSON.stringify({ generaciones: v.used + 1, max: MAX_GENERATIONS, caduca: v.caduca || null }) + '\n\n'));
       }
       await w.close();
     } catch (e) { try { await w.abort(e); } catch (x) { } }

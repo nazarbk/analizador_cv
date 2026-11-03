@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Cómo hacer un CV compatible con ATS: guía práctica (2026)</title>
+<meta name="description" content="Qué es un ATS, cómo lee tu currículum y qué cambiar para que no pierda información: formato, encabezados, palabras clave y errores frecuentes.">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0F7A74">
+<link rel="canonical" href="https://analizadorcv.com/guias/cv-ats.html">
+<meta name="author" content="Nazar Blanco Kataran">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="Analizador de CV">
+<meta property="og:title" content="Cómo hacer un CV compatible con ATS: guía práctica (2026)">
+<meta property="og:description" content="Qué es un ATS, cómo lee tu currículum y qué cambiar para que no pierda información: formato, encabezados, palabras clave y errores frecuentes.">
+<meta property="og:url" content="https://analizadorcv.com/guias/cv-ats.html">
+<meta property="og:image" content="https://analizadorcv.com/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Analizador de CV: puntuación del CV y categorías del análisis">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Article", "headline": "Cómo hacer un CV compatible con los filtros ATS", "description": "Qué es un ATS, cómo lee tu currículum y qué cambiar para que no pierda información: formato, encabezados, palabras clave y errores frecuentes.", "inLanguage": "es", "datePublished": "2026-11-03", "dateModified": "2026-11-03", "author": {"@type": "Person", "name": "Nazar Blanco Kataran", "url": "https://github.com/nazarbk"}, "publisher": {"@type": "Person", "name": "Nazar Blanco Kataran"}, "image": "https://analizadorcv.com/assets/og-image.png", "mainEntityOfPage": "https://analizadorcv.com/guias/cv-ats.html"}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://analizadorcv.com/"}, {"@type": "ListItem", "position": 2, "name": "Guías", "item": "https://analizadorcv.com/guias/"}, {"@type": "ListItem", "position": 3, "name": "Cómo hacer un CV compatible con los filtros ATS", "item": "https://analizadorcv.com/guias/cv-ats.html"}]}]</script>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}
+:root {
+  --paper: #FFFFFF; --sheet: #F9F9FC; --field: #FFFFFF;
+  --ink: #1F2430; --ink-2: #4A5160; --ink-3: #6A7080; --rule: #E3E3EC; --rule-2: #EEEEF4;
+  --pen: #0F7A74; --pen-strong: #0B5F5A; --pen-ink: #FFFFFF; --pen-soft: #E4F3F1; --pen-line: #8CCBC5;
+  --lila: #7B6CC6; --lila-ink: #4E3F96; --lila-soft: #F2EFFB; --lila-line: #DCD5F3;
+  --mark: #ECE6F8; --mark-ink: #1F2430;
+  --ok: #2E7A4C; --ok-bg: #E6F2EA; --warn: #8A4D85; --warn-bg: #F5ECF4; --bad: #B03F35; --bad-bg: #F8E6E3; --info: #4A5160; --info-bg: #EFEDF6;
+  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --r: 6px; --shadow: 0 1px 2px rgba(31, 36, 48, .05), 0 2px 8px rgba(31, 36, 48, .03);
+  color-scheme: light;
+}
+/* Página principal. Usa los mismos tokens de color que el analizador (se añaden al compilar). */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; color: var(--ink); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+p { margin: 0; }
+a { color: var(--pen); }
+:focus-visible { outline: 2px solid var(--pen); outline-offset: 3px; border-radius: 4px; }
+.lp-wrap { max-width: 1180px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.skip { position: absolute; left: -9999px; top: 8px; background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 6px; z-index: 100; }
+.skip:focus { left: 12px; }
+
+/* cabecera */
+.lp-top { position: sticky; top: 0; z-index: 20; background: rgba(255, 255, 255, .92); backdrop-filter: saturate(1.4) blur(8px); border-top: 3px solid var(--pen); border-bottom: 1px solid var(--rule); }
+.lp-nav { display: flex; align-items: center; gap: 28px; min-height: 64px; }
+.lp-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font: 600 20px/1 var(--serif); white-space: nowrap; }
+.lp-brand em { font-style: normal; font-weight: 400; color: var(--ink-2); }
+.lp-nav nav { display: flex; gap: 22px; margin-left: auto; }
+.lp-nav nav a { color: var(--ink-2); text-decoration: none; font-size: 15px; }
+.lp-nav nav a:hover { color: var(--pen-strong); }
+@media (max-width: 860px) { .lp-nav nav { display: none; } .lp-nav-cta { margin-left: auto; } }
+@media (max-width: 420px) { .lp-nav { gap: 12px; } .lp-nav-cta { padding: 8px 11px; font-size: 13.5px; } .lp-brand { font-size: 17px; gap: 8px; } .lp-brand img { width: 30px; height: 30px; } }
+
+/* botones */
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 11px 20px; border-radius: 8px; font: 600 16px/1.2 var(--sans); text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: background .15s, border-color .15s, color .15s, transform .15s; }
+.lp-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.lp-btn-primary { background: var(--pen); color: #fff; box-shadow: 0 1px 2px rgba(15, 122, 116, .25), 0 6px 18px rgba(15, 122, 116, .18); }
+.lp-btn-primary:hover { background: var(--pen-strong); transform: translateY(-1px); }
+.lp-btn-ghost { background: #fff; color: var(--pen-strong); border-color: var(--pen-line); }
+.lp-btn-ghost:hover { background: var(--pen-soft); }
+.lp-nav-cta { min-height: 40px; padding: 8px 16px; font-size: 15px; white-space: nowrap; }
+#cvFile { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+#cvFile:focus-visible + .lp-btn, .lp-btn:focus-within { outline: 2px solid var(--pen); outline-offset: 3px; }
+
+/* portada */
+.lp-hero { padding: 72px 0 64px; background: radial-gradient(900px 420px at 85% 10%, var(--lila-soft), transparent 70%), radial-gradient(700px 380px at 5% 0%, var(--pen-soft), transparent 70%); }
+.lp-hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 56px; align-items: center; }
+.lp-eyebrow { display: inline-block; font: 600 13px/1.3 var(--sans); letter-spacing: .04em; color: var(--pen-strong); background: #fff; border: 1px solid var(--pen-line); border-radius: 999px; padding: 6px 14px; }
+.lp-hero h1 { font-size: clamp(34px, 4.6vw, 54px); line-height: 1.08; margin-top: 20px; }
+.lp-lede { font-size: 18.5px; line-height: 1.6; color: var(--ink-2); margin-top: 20px; max-width: 36em; }
+.lp-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.lp-fine { font-size: 14px; color: var(--ink-3); margin-top: 14px; }
+.lp-status { font-size: 14.5px; margin-top: 8px; min-height: 1.4em; color: var(--pen-strong); font-weight: 600; }
+.lp-status.err { color: var(--bad); }
+
+/* informe de muestra */
+.lp-mock { position: relative; }
+.lp-mock-card { background: #fff; border: 1px solid var(--rule); border-radius: 16px; padding: 26px 26px 22px; box-shadow: 0 2px 4px rgba(31, 36, 48, .04), 0 18px 48px rgba(31, 36, 48, .10); }
+.lp-mock-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.lp-k { font: 600 11.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.lp-score { font: 600 58px/1 var(--serif); color: var(--pen); margin-top: 6px; }
+.lp-score small { font-size: 22px; color: var(--ink-3); font-weight: 400; }
+.lp-mock-sub { display: block; font: 600 15px var(--serif); margin-top: 4px; }
+.lp-ring svg { width: 74px; height: 74px; transform: rotate(-90deg); }
+.lp-ring circle { fill: none; stroke: var(--rule-2); stroke-width: 7; }
+.lp-ring circle.v { stroke: var(--pen); stroke-linecap: round; }
+.lp-bars { margin-top: 18px; display: grid; gap: 12px; }
+.lp-bars div { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; font-size: 14px; color: var(--ink-2); }
+.lp-bars b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.lp-bars i { grid-column: 1 / -1; height: 7px; border-radius: 7px; background: var(--rule-2); overflow: hidden; }
+.lp-bars u { display: block; height: 100%; border-radius: 7px; background: var(--ok); }
+.lp-bars u.m { background: var(--warn); }
+.lp-checks { list-style: none; margin: 20px 0 0; padding: 16px 0 0; border-top: 1px solid var(--rule-2); display: grid; gap: 9px; font-size: 14px; color: var(--ink-2); }
+.lp-checks li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: start; }
+.lp-checks em { font: 600 11.5px/1 var(--sans); font-style: normal; text-align: center; padding: 5px 0; border-radius: 999px; margin-top: 1px; }
+.lp-checks .ok em { background: var(--ok-bg); color: var(--ok); }
+.lp-checks .warn em { background: var(--warn-bg); color: var(--warn); }
+.lp-checks .bad em { background: var(--bad-bg); color: var(--bad); }
+.lp-mock-chip { position: absolute; left: -18px; bottom: -18px; display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--lila-line); color: var(--lila-ink); font: 600 13.5px var(--sans); padding: 9px 14px; border-radius: 999px; box-shadow: 0 8px 24px rgba(31, 36, 48, .10); }
+.lp-mock-chip svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* garantías */
+.lp-trust { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: #fff; }
+.lp-trust-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.lp-trust-grid div { padding: 26px 26px 26px 0; display: grid; gap: 4px; }
+.lp-trust-grid div + div { padding-left: 26px; border-left: 1px solid var(--rule); }
+.lp-trust-grid strong { font: 600 17px var(--serif); }
+.lp-trust-grid span { font-size: 14.5px; color: var(--ink-2); }
+
+/* secciones */
+.lp-sec { padding: 88px 0; }
+.lp-alt { background: var(--sheet); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.lp-kicker { font: 600 12.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .1em; color: var(--lila-ink); }
+.lp-sec h2 { font-size: clamp(27px, 3.2vw, 38px); line-height: 1.15; margin-top: 10px; max-width: 24em; }
+.lp-features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 40px; }
+.lp-features article { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 22px 20px; transition: border-color .15s, transform .15s, box-shadow .15s; }
+.lp-features article:hover { border-color: var(--pen-line); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(31, 36, 48, .06); }
+.lp-features svg { width: 38px; height: 38px; padding: 8px; border-radius: 10px; background: var(--pen-soft); fill: none; stroke: var(--pen-strong); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lp-features article:nth-child(even) svg { background: var(--lila-soft); stroke: var(--lila-ink); }
+.lp-features h3 { font-size: 18px; margin-top: 14px; line-height: 1.25; }
+.lp-features p { font-size: 14.5px; color: var(--ink-2); margin-top: 8px; line-height: 1.55; }
+
+.lp-steps { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; counter-reset: s; }
+.lp-steps li { background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 24px; position: relative; }
+.lp-steps li span { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--pen); color: #fff; font: 600 17px var(--serif); }
+.lp-steps h3 { font-size: 20px; margin-top: 14px; }
+.lp-steps p { color: var(--ink-2); margin-top: 8px; font-size: 15px; }
+
+.lp-priv { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+.lp-priv p { color: var(--ink-2); margin-top: 14px; max-width: 38em; }
+.lp-priv h2 + p { margin-top: 18px; }
+.lp-priv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.lp-priv-list li { display: flex; align-items: baseline; gap: 14px; padding: 18px 22px; border-radius: 12px; background: var(--lila-soft); border: 1px solid var(--lila-line); color: var(--ink-2); font-size: 16px; }
+.lp-priv-list b { font: 600 38px/1 var(--serif); color: var(--lila-ink); min-width: 28px; }
+
+.lp-faq > * { max-width: 860px; }
+.lp-faq h2 { margin-bottom: 26px; }
+.lp-faq details { background: #fff; border: 1px solid var(--rule); border-radius: 10px; margin-top: 10px; }
+.lp-faq summary { cursor: pointer; padding: 17px 52px 17px 20px; font: 600 17px/1.35 var(--sans); list-style: none; position: relative; }
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary::after { content: ""; position: absolute; right: 22px; top: 50%; width: 9px; height: 9px; border-right: 2px solid var(--pen); border-bottom: 2px solid var(--pen); transform: translateY(-70%) rotate(45deg); transition: transform .2s; }
+.lp-faq details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+.lp-faq details p { padding: 0 20px 18px; color: var(--ink-2); }
+
+.lp-final { background: var(--pen-strong); color: #fff; padding: 72px 0; background-image: radial-gradient(600px 300px at 90% 0%, rgba(123, 108, 198, .45), transparent 70%); }
+.lp-final-in { text-align: center; }
+.lp-final h2 { color: #fff; font-size: clamp(26px, 3.2vw, 38px); }
+.lp-final p { color: rgba(255, 255, 255, .85); margin-top: 10px; font-size: 17px; }
+.lp-final .lp-cta { justify-content: center; }
+.lp-btn-light { background: #fff; color: var(--pen-strong); box-shadow: none; }
+.lp-btn-light:hover { background: var(--pen-soft); color: var(--pen-strong); }
+.lp-btn-onDark { color: #fff; border-color: rgba(255, 255, 255, .55); background: transparent; }
+.lp-btn-onDark:hover { background: rgba(255, 255, 255, .12); }
+.lp-final :focus-visible { outline-color: #fff; }
+
+.lp-foot { border-top: 1px solid var(--rule); padding: 28px 0 36px; font-size: 14px; color: var(--ink-2); }
+.lp-foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.lp-foot-brand { display: flex; align-items: center; gap: 10px; }
+.lp-foot nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.lp-foot p { margin-left: auto; }
+
+/* soltar archivo */
+.lp-drop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(11, 95, 90, .82); padding: 20px; }
+.lp-drop[hidden] { display: none; }
+.lp-drop div { display: grid; justify-items: center; gap: 10px; text-align: center; color: #fff; border: 2px dashed rgba(255, 255, 255, .7); border-radius: 18px; padding: 48px 56px; }
+.lp-drop svg { width: 46px; height: 46px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lp-drop strong { font: 600 26px var(--serif); }
+
+@media (max-width: 1020px) { .lp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .lp-hero { padding: 48px 0 56px; }
+  .lp-hero-grid, .lp-priv { grid-template-columns: minmax(0, 1fr); gap: 44px; }
+  .lp-mock { max-width: 520px; }
+  .lp-steps { grid-template-columns: minmax(0, 1fr); }
+  .lp-sec { padding: 64px 0; }
+}
+@media (max-width: 680px) {
+  .lp-trust-grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-trust-grid div, .lp-trust-grid div + div { padding: 18px 0; border-left: 0; }
+  .lp-trust-grid div + div { border-top: 1px solid var(--rule); }
+  .lp-features { grid-template-columns: minmax(0, 1fr); }
+  .lp-cta .lp-btn { flex: 1 1 100%; }
+  .lp-mock-chip { left: 12px; }
+  .lp-foot p { margin-left: 0; }
+}
+
+/* precios */
+.lp-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 36px; max-width: 920px; }
+.lp-plan { display: flex; flex-direction: column; gap: 14px; background: #fff; border: 1px solid var(--rule); border-radius: 14px; padding: 26px 26px 24px; }
+.lp-plan h3 { font-size: 22px; }
+.lp-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lp-price b { font: 600 40px/1 var(--serif); color: var(--ink); }
+.lp-price span { color: var(--ink-3); font-size: 14px; }
+.lp-plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; flex: 1; align-content: start; }
+.lp-plan li { position: relative; padding-left: 26px; color: var(--ink-2); font-size: 15px; }
+.lp-plan li::before { content: ""; position: absolute; left: 2px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--pen-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-4.9' fill='none' stroke='%230B5F5A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.lp-plan .lp-btn { align-self: flex-start; }
+.lp-plan-pro { border-color: var(--lila-line); background: linear-gradient(180deg, var(--lila-soft), #fff 55%); box-shadow: 0 14px 40px rgba(78, 63, 150, .10); }
+.lp-plan-pro h3 { color: var(--lila-ink); }
+.lp-plan-pro li::before { background-color: var(--lila-soft); }
+.lp-plan .lp-fine { margin-top: 0; font-size: 13px; }
+@media (max-width: 760px) { .lp-plans { grid-template-columns: minmax(0, 1fr); } .lp-plan .lp-btn { align-self: stretch; } }
+
+/* guías en la portada */
+.lp-guides { list-style: none; padding: 0; margin: 32px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.lp-guides li { background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 20px; display: grid; gap: 8px; align-content: start; transition: border-color .15s, transform .15s; }
+.lp-guides li:hover { border-color: var(--pen-line); transform: translateY(-2px); }
+.lp-guides a { font: 600 18px/1.3 var(--serif); color: var(--ink); text-decoration: none; }
+.lp-guides a:hover { color: var(--pen-strong); }
+.lp-guides p { font-size: 14.5px; color: var(--ink-2); }
+.lp-more { margin-top: 18px; }
+@media (max-width: 900px) { .lp-guides { grid-template-columns: minmax(0, 1fr); } }
+
+
+.lp-article { max-width: 760px; margin: 0 auto; padding: 36px max(20px, env(safe-area-inset-left, 0px)) 72px; }
+.crumbs { font-size: 14px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px; }
+.crumbs a { color: var(--ink-2); }
+.lp-article h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.12; margin-top: 18px; }
+.lp-article .lede { font-size: 19px; color: var(--ink-2); margin-top: 14px; }
+.byline { font-size: 14px; color: var(--ink-3); margin-top: 14px; }
+.toc-box { margin: 26px 0 8px; padding: 16px 20px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; }
+.toc-box strong { font: 600 14px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.toc-box ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.prose h2 { font-size: 26px; margin-top: 40px; scroll-margin-top: 80px; }
+.prose p, .prose li { font-size: 17px; line-height: 1.7; color: var(--ink); }
+.prose p { margin-top: 14px; }
+.prose ul, .prose ol { margin-top: 12px; padding-left: 22px; display: grid; gap: 8px; }
+.prose blockquote { margin: 18px 0; padding: 4px 20px; border-left: 4px solid var(--lila-line); background: var(--lila-soft); border-radius: 0 10px 10px 0; }
+.cta-box { margin-top: 44px; padding: 24px; border-radius: 14px; background: linear-gradient(110deg, var(--pen-soft), var(--lila-soft)); border: 1px solid var(--pen-line); display: grid; gap: 12px; }
+.cta-box h2 { font-size: 22px; margin: 0; }
+.cta-box .lp-cta { margin-top: 4px; }
+.related { margin-top: 40px; }
+.related h2 { font-size: 20px; }
+.related ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+.related a { font-weight: 600; }
+.guide-list { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 16px; }
+.guide-list li { padding: 20px 22px; border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); }
+.guide-list a { font: 600 20px/1.3 var(--serif); text-decoration: none; color: var(--ink); }
+.guide-list a:hover { color: var(--pen-strong); }
+.guide-list p { color: var(--ink-2); margin-top: 6px; }
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<header class="lp-top">
+  <div class="lp-wrap lp-nav">
+    <a class="lp-brand" href="/" aria-label="Analizador de CV, inicio">
+      <img src="/assets/icon.svg" width="34" height="34" alt="">
+      <span>Analizador <em>de CV</em></span>
+    </a>
+    <nav aria-label="Secciones">
+      <a href="/#que-analiza">Qué analiza</a>
+      <a href="/#como-funciona">Cómo funciona</a>
+      <a href="/#precios">Precios</a>
+      <a href="/#privacidad">Privacidad</a>
+      <a href="/#preguntas">Preguntas</a>
+      <a href="/guias/">Guías</a>
+    </nav>
+    <a class="lp-btn lp-btn-primary lp-nav-cta" href="/analizador.html">Analizar mi CV gratis</a>
+  </div>
+</header><main id="main" class="lp-article"><nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">›</span><a href="/guias/">Guías</a><span aria-hidden="true">›</span><span>Cómo hacer un CV compatible con los filtros ATS</span></nav><article><h1>Cómo hacer un CV compatible con los filtros ATS</h1><p class="lede">Qué es un ATS, cómo lee tu currículum y los cambios concretos que evitan que tu candidatura llegue incompleta a la persona que selecciona.</p><p class="byline">Por Nazar Blanco Kataran · Actualizada el 3 de noviembre de 2026 · 3 min de lectura</p><nav class="toc-box" aria-label="Contenido"><strong>En esta guía</strong><ol><li><a href="#que-es">Qué es un ATS y por qué importa</a></li><li><a href="#formato">El formato: lo que más errores provoca</a></li><li><a href="#estructura">Encabezados que un ATS reconoce</a></li><li><a href="#palabras-clave">Palabras clave: cómo usarlas sin hacer trampas</a></li><li><a href="#pdf-o-word">¿PDF o Word?</a></li><li><a href="#comprobar">Cómo comprobar tu CV antes de enviarlo</a></li></ol></nav><div class="prose"><h2 id="que-es">Qué es un ATS y por qué importa</h2>
+<p>Un ATS (<em>applicant tracking system</em>, sistema de seguimiento de candidaturas) es el programa con el que muchas empresas reciben y ordenan los currículums. Workday, SAP SuccessFactors, Oracle Taleo, Greenhouse o Teamtailor son algunos de los más usados. Cuando envías tu CV a través del portal de empleo de una empresa, lo normal es que pase por uno de ellos.</p>
+<p>El ATS hace dos cosas con tu archivo: <strong>extrae el texto</strong> para rellenar una ficha (nombre, contacto, puestos, fechas, formación, habilidades) y <strong>permite buscar y filtrar</strong> por palabras clave, años de experiencia o idiomas. Si la extracción falla, tu ficha queda incompleta: puede faltar el email, mezclarse dos puestos o desaparecer una sección entera.</p>
+<p>Conviene desmontar un mito: no hay un robot que lea tu CV y lo descarte por su cuenta en la mayoría de procesos. Quien decide suele ser una persona que busca y filtra dentro del ATS. Lo que sí ocurre es que un CV mal leído aparece peor en esas búsquedas, o llega con datos rotos. Por eso merece la pena que sea fácil de leer para la máquina.</p>
+
+<h2 id="formato">El formato: lo que más errores provoca</h2>
+<ul>
+<li><strong>Una sola columna.</strong> Las plantillas con barra lateral se leen de izquierda a derecha línea a línea, y el texto de las dos columnas acaba mezclado. Es el fallo más común en CV diseñados con Canva o plantillas gráficas.</li>
+<li><strong>Nada de tablas ni cuadros de texto</strong> para la información importante. Algunos ATS leen las tablas celda a celda y otros ignoran los cuadros de texto.</li>
+<li><strong>El contacto en el cuerpo del documento</strong>, no en el encabezado ni en el pie de página de Word: varios sistemas los descartan.</li>
+<li><strong>Sin iconos en lugar de palabras.</strong> Un icono de teléfono se convierte en un carácter extraño; escribe el dato y basta.</li>
+<li><strong>Sin barras ni estrellas para el nivel.</strong> «●●●○○» no significa nada para un ATS. Usa palabras («Avanzado») o el nivel MCER en idiomas (B2, C1).</li>
+<li><strong>Texto real, no una imagen.</strong> Si exportas el CV como imagen o lo escaneas, no hay texto que leer. Comprueba que puedes seleccionar y copiar el texto del PDF.</li>
+<li><strong>Letras normales en los títulos.</strong> Escribir «E X P E R I E N C I A» con espacios hace que se lea como letras sueltas y la sección no se reconozca.</li>
+</ul>
+
+<h2 id="estructura">Encabezados que un ATS reconoce</h2>
+<p>Usa títulos de sección estándar: <strong>Perfil</strong>, <strong>Experiencia profesional</strong>, <strong>Formación</strong>, <strong>Habilidades</strong>, <strong>Idiomas</strong>, <strong>Certificaciones</strong>. Los títulos creativos («Mi viaje», «Lo que sé hacer») dificultan que el sistema sepa qué hay debajo.</p>
+<p>En cada puesto, pon siempre en el mismo orden el cargo, la empresa, la ubicación y las fechas, con un formato de fecha coherente (por ejemplo, <em>03/2022 – 06/2024</em> o <em>mar. 2022 – jun. 2024</em>). Mezclar formatos complica el cálculo de los años de experiencia.</p>
+
+<h2 id="palabras-clave">Palabras clave: cómo usarlas sin hacer trampas</h2>
+<p>Quien selecciona busca en el ATS por términos de la oferta: tecnologías, herramientas, titulaciones, idiomas. Para aparecer en esas búsquedas:</p>
+<ol>
+<li>Lee la oferta y subraya los requisitos y herramientas que de verdad tienes.</li>
+<li>Escríbelos <strong>con el mismo nombre</strong> que usa la oferta (si pide «Google Analytics 4», no basta con «analítica web»).</li>
+<li>Ponlos <strong>en contexto</strong>, dentro de tus logros: «Automaticé los informes semanales con Python y SQL» vale más que una lista de palabras sueltas.</li>
+<li>No repitas términos para «subir puntos» ni los escondas en texto blanco o diminuto: los sistemas actuales lo detectan y, si lo ve una persona, la candidatura queda descartada.</li>
+</ol>
+
+<h2 id="pdf-o-word">¿PDF o Word?</h2>
+<p>Los ATS actuales leen bien un PDF con texto seleccionable y también un DOCX. Si la oferta pide un formato, usa ese. Si no dice nada, un PDF generado desde Word o Google Docs (no una imagen ni un escaneo) es la opción más segura, porque se ve igual en cualquier ordenador.</p>
+
+<h2 id="comprobar">Cómo comprobar tu CV antes de enviarlo</h2>
+<p>La prueba casera es copiar todo el texto del PDF y pegarlo en un bloc de notas: si el orden es raro, faltan datos o aparecen símbolos extraños, el ATS tendrá el mismo problema. Para ir más allá, el <a href="/analizador.html">Analizador de CV</a> revisa gratis las columnas, tablas, encabezados, fechas, iconos, texto oculto y palabras clave frente a una oferta, y te dice qué arreglar y por qué. Tu CV se analiza en tu navegador: no se sube a ningún servidor.</p></div></article><aside class="cta-box"><h2>Comprueba tu CV gratis</h2><p>El Analizador de CV revisa tu currículum como lo haría un ATS y te dice qué arreglar, por prioridad. Se analiza en tu navegador: no se sube a ningún servidor.</p><div class="lp-cta"><a class="lp-btn lp-btn-primary" href="/analizador.html">Analizar mi CV gratis</a><a class="lp-btn lp-btn-ghost" href="/analizador.html#pro">Ver el Informe Pro</a></div></aside><section class="related"><h2>Otras guías</h2><ul><li><a href="/guias/adaptar-cv-oferta.html">Cómo adaptar tu CV a una oferta de trabajo</a></li><li><a href="/guias/carta-de-presentacion.html">Cómo escribir una carta de presentación que no suene genérica</a></li></ul></section></main><footer class="lp-foot">
+  <div class="lp-wrap lp-foot-in">
+    <div class="lp-foot-brand"><img src="/assets/icon.svg" width="26" height="26" alt=""><span>Analizador de CV · resultados orientativos, sin garantía de selección.</span></div>
+    <nav aria-label="Información legal">
+      <a href="/aviso-legal.html">Aviso legal</a>
+      <a href="/privacidad.html">Privacidad</a>
+      <a href="/terminos.html">Términos de uso</a>
+      <a href="/condiciones.html">Condiciones de venta</a>
+      <a href="/guias/">Guías</a>
+      <a href="https://github.com/nazarbk" rel="noopener">Código en GitHub</a>
+    </nav>
+    <p>Hecho por Nazar Blanco Kataran</p>
+  </div>
+</footer>
+</body>
+</html>

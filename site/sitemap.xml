@@ -2,6 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://analizadorcv.com/</loc><lastmod>2026-11-03</lastmod><priority>1.0</priority></url>
   <url><loc>https://analizadorcv.com/analizador.html</loc><lastmod>2026-11-03</lastmod><priority>0.9</priority></url>
+  <url><loc>https://analizadorcv.com/guias/</loc><lastmod>2026-11-03</lastmod><priority>0.7</priority></url>
+  <url><loc>https://analizadorcv.com/guias/adaptar-cv-oferta.html</loc><lastmod>2026-11-03</lastmod><priority>0.7</priority></url>
+  <url><loc>https://analizadorcv.com/guias/carta-de-presentacion.html</loc><lastmod>2026-11-03</lastmod><priority>0.7</priority></url>
+  <url><loc>https://analizadorcv.com/guias/cv-ats.html</loc><lastmod>2026-11-03</lastmod><priority>0.7</priority></url>
   <url><loc>https://analizadorcv.com/condiciones.html</loc><lastmod>2026-11-03</lastmod><priority>0.3</priority></url>
   <url><loc>https://analizadorcv.com/privacidad.html</loc><lastmod>2026-11-03</lastmod><priority>0.3</priority></url>
   <url><loc>https://analizadorcv.com/aviso-legal.html</loc><lastmod>2026-11-03</lastmod><priority>0.2</priority></url>

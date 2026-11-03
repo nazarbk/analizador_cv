@@ -5,8 +5,11 @@ export default async (req) => {
   if (!env('STRIPE_SECRET_KEY')) return json({ disponible: false, error: 'pagos_no_configurados' }, 200);
   const id = new URL(req.url).searchParams.get('session_id');
   if (!id) return json({ disponible: true });
+  // Siempre responde 200 con el estado del pedido: el navegador lo usa para saber cuántos informes le quedan.
   const v = await verifyPurchase(id);
-  if (!v.ok) return json({ disponible: true, pagado: v.error !== 'pago_no_completado' && v.error !== 'pedido_no_encontrado' && v.error !== 'pedido_no_valido', error: v.error, restantes: v.error === 'limite_generaciones' ? 0 : undefined }, v.status === 429 ? 200 : v.status);
-  return json({ disponible: true, pagado: true, restantes: MAX_GENERATIONS - v.used });
+  const base = { disponible: true, max: MAX_GENERATIONS, caduca: v.caduca || null };
+  if (v.ok) return json(Object.assign(base, { estado: 'pagado', restantes: MAX_GENERATIONS - v.used }));
+  const estado = { pago_no_completado: 'pendiente', limite_generaciones: 'agotado', pedido_caducado: 'caducado', pedido_no_encontrado: 'no_existe', pedido_no_valido: 'no_existe' }[v.error] || 'desconocido';
+  return json(Object.assign(base, { estado, restantes: 0, error: v.error }));
 };
 export const config = { path: '/api/estado' };

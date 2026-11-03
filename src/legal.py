@@ -41,7 +41,7 @@ PAGES = {
 <li><strong>Para qué:</strong> generar el informe que has comprado: el CV adaptado a la oferta, la carta de presentación y el análisis de encaje. Base jurídica: la ejecución del contrato que solicitas (art. 6.1.b RGPD). Además, te pedimos que lo aceptes expresamente antes de pagar.</li>
 <li><strong>Quién lo procesa:</strong> el contenido pasa por una función del servidor de alojamiento (Netlify), que lo reenvía a Anthropic, PBC (EE. UU.), proveedor del modelo de IA, como encargado del tratamiento. Esta web no guarda el CV, la oferta ni el informe en ningún servidor. Anthropic conserva los datos enviados a su API durante un tiempo limitado por motivos de seguridad y, según sus condiciones comerciales, no los usa para entrenar sus modelos.</li>
 <li><strong>Pago:</strong> lo gestiona Stripe, que actúa como vendedor registrado (merchant of record): recoge tus datos de pago, tu email y tu país, emite la factura y declara los impuestos de la venta, de acuerdo con su propia política de privacidad. Esta web solo recibe de Stripe el estado del pedido y el número de informes generados, para comprobar el pago y darte soporte.</li>
-<li><strong>En tu navegador:</strong> mientras pagas, el CV y la oferta se guardan en el almacenamiento local de tu navegador (IndexedDB) para no perderlos al volver de la pasarela. El informe generado también se guarda ahí para que puedas volver a verlo. Puedes borrarlo con «Borrar de este navegador».</li>
+<li><strong>En tu navegador:</strong> mientras pagas, el CV y la oferta se guardan en el almacenamiento local de tu navegador (IndexedDB) para no perderlos al volver de la pasarela. También se guardan ahí el código de tu compra (para saber cuántos informes te quedan) y los informes generados, para que puedas volver a verlos. Puedes borrar cada informe con «Borrar este informe»; borrar los datos del sitio en tu navegador elimina todo, y la compra se puede recuperar con su enlace.</li>
 <li><strong>Tus derechos:</strong> como no conservamos el contenido de tu CV ni del informe, no podemos facilitarlo ni modificarlo después; para cualquier consulta sobre tu pedido, escribe a <a href="mailto:nazarblanco@gmail.com">nazarblanco@gmail.com</a>.</li>
 </ul>
 <h2>Transferencias internacionales</h2>
@@ -63,7 +63,8 @@ PAGES = {
 <li>una carta de presentación personalizada, editable y descargable;</li>
 <li>el encaje con la oferta requisito a requisito y la puntuación ATS antes y después de adaptar el CV.</li>
 </ul>
-<p>Con cada compra puedes generar el informe hasta 3 veces durante 30 días (por ejemplo, para otra oferta o para obtener otra redacción). El informe se guarda en tu navegador; esta web no conserva una copia.</p>
+<p>Cada compra incluye <strong>3 informes</strong>, que puedes generar durante <strong>30 días</strong> desde el pago: para la misma oferta o para otras, con el mismo CV o con otro. Los informes se guardan en tu navegador; esta web no conserva una copia.</p>
+<p>Después de pagar verás el <strong>enlace de tu compra</strong>. Guárdalo: con él puedes usar los informes que te queden en otro navegador o dispositivo. Es personal; cualquiera que lo tenga podría usar esos informes. Si lo pierdes, escríbenos con el email de la compra.</p>
 <h2>Precio</h2>
 <p>4,99 € por informe, IVA incluido, en un pago único. No hay suscripción ni cargos recurrentes.</p>
 <h2>Entrega</h2>
@@ -107,6 +108,7 @@ PAGE_TPL = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <title>{title} · Analizador de CV</title>
+<meta name="description" content="{title} del Analizador de CV (analizadorcv.com).">
 <link rel="canonical" href="{canonical}">
 {icons}
 <style>

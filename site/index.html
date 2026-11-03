@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XEQ6jR2YIN7ap5ARSdHTzQ4P3Pg/HwZnBi+NuQQOHu4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Analizador de CV gratis: comprueba tu CV para los filtros ATS</title>
-<meta name="description" content="Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.">
+<meta name="description" content="Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -18,14 +18,14 @@
 <meta property="og:locale" content="es_ES">
 <meta property="og:site_name" content="Analizador de CV">
 <meta property="og:title" content="Analizador de CV: descubre cómo leen tu CV los filtros ATS">
-<meta property="og:description" content="Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.">
+<meta property="og:description" content="Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.">
 <meta property="og:url" content="https://analizadorcv.com/">
 <meta property="og:image" content="https://analizadorcv.com/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Analizador de CV: puntuación del CV y categorías del análisis">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Analizador de CV", "url": "https://analizadorcv.com/", "description": "Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.", "inLanguage": "es", "applicationCategory": "BusinessApplication", "operatingSystem": "Cualquiera (navegador web)", "browserRequirements": "Requiere JavaScript y un navegador actual", "isAccessibleForFree": true, "offers": [{"@type": "Offer", "name": "Análisis gratuito", "price": "0", "priceCurrency": "EUR"}, {"@type": "Offer", "name": "Informe Pro: CV adaptado a una oferta y carta de presentación", "price": "4.99", "priceCurrency": "EUR"}], "author": {"@type": "Person", "name": "Nazar Blanco Kataran", "url": "https://github.com/nazarbk"}, "image": "https://analizadorcv.com/assets/og-image.png", "featureList": ["Compatibilidad con ATS e IA", "Puntos fuertes y débiles", "Coincidencia con ofertas de empleo", "Datos listos para copiar en portales de empleo", "CV en formato ATS en PDF y Word", "Versión del CV en inglés", "Formato por país", "Comparación de versiones"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Analizador de CV", "url": "https://analizadorcv.com/", "description": "Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.", "inLanguage": "es", "applicationCategory": "BusinessApplication", "operatingSystem": "Cualquiera (navegador web)", "browserRequirements": "Requiere JavaScript y un navegador actual", "isAccessibleForFree": true, "offers": [{"@type": "Offer", "name": "Análisis gratuito", "price": "0", "priceCurrency": "EUR"}, {"@type": "Offer", "name": "Informe Pro: CV adaptado a una oferta y carta de presentación", "price": "4.99", "priceCurrency": "EUR"}], "author": {"@type": "Person", "name": "Nazar Blanco Kataran", "url": "https://github.com/nazarbk"}, "image": "https://analizadorcv.com/assets/og-image.png", "featureList": ["Compatibilidad con ATS e IA", "Puntos fuertes y débiles", "Coincidencia con ofertas de empleo", "Datos listos para copiar en portales de empleo", "CV en formato ATS en PDF y Word", "Versión del CV en inglés", "Formato por país", "Comparación de versiones"]}</script>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}
 :root {
@@ -215,6 +215,16 @@ a { color: var(--pen); }
 .lp-plan .lp-fine { margin-top: 0; font-size: 13px; }
 @media (max-width: 760px) { .lp-plans { grid-template-columns: minmax(0, 1fr); } .lp-plan .lp-btn { align-self: stretch; } }
 
+/* guías en la portada */
+.lp-guides { list-style: none; padding: 0; margin: 32px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.lp-guides li { background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 20px; display: grid; gap: 8px; align-content: start; transition: border-color .15s, transform .15s; }
+.lp-guides li:hover { border-color: var(--pen-line); transform: translateY(-2px); }
+.lp-guides a { font: 600 18px/1.3 var(--serif); color: var(--ink); text-decoration: none; }
+.lp-guides a:hover { color: var(--pen-strong); }
+.lp-guides p { font-size: 14.5px; color: var(--ink-2); }
+.lp-more { margin-top: 18px; }
+@media (max-width: 900px) { .lp-guides { grid-template-columns: minmax(0, 1fr); } }
+
 </style>
 </head>
 <body>
@@ -231,6 +241,7 @@ a { color: var(--pen); }
       <a href="#precios">Precios</a>
       <a href="#privacidad">Privacidad</a>
       <a href="#preguntas">Preguntas</a>
+      <a href="guias/">Guías</a>
     </nav>
     <a class="lp-btn lp-btn-ghost lp-nav-cta" href="analizador.html">Abrir el analizador</a>
   </div>
@@ -340,7 +351,7 @@ a { color: var(--pen); }
             <li>Carta de presentación personalizada</li>
             <li>Encaje requisito a requisito con la oferta</li>
             <li>Puntuación ATS antes y después de adaptar el CV</li>
-            <li>En español o en inglés · hasta 3 generaciones en 30 días</li>
+            <li>3 informes por compra durante 30 días, para la misma oferta o para otras, en español o en inglés</li>
           </ul>
           <a class="lp-btn lp-btn-primary" href="analizador.html#pro">Conseguir el Informe Pro</a>
           <p class="lp-fine">Usa IA (Anthropic) solo si lo compras y lo aceptas expresamente. Pago con Stripe.</p>
@@ -382,6 +393,15 @@ a { color: var(--pen); }
     </div>
   </section>
 
+  <section class="lp-sec lp-alt" id="guias" aria-labelledby="h-guias">
+    <div class="lp-wrap">
+      <p class="lp-kicker">Guías</p>
+      <h2 id="h-guias">Aprende a mejorar tu CV por tu cuenta</h2>
+      <ul class="lp-guides"><li><a href="guias/adaptar-cv-oferta.html">Cómo adaptar tu CV a una oferta de trabajo</a><p>Enviar el mismo CV a todas las ofertas es la forma más rápida de que no destaque en ninguna. Este método te permite adaptarlo en unos 20 minutos sin inventar nada.</p></li><li><a href="guias/carta-de-presentacion.html">Cómo escribir una carta de presentación que no suene genérica</a><p>La mayoría de cartas se parecen tanto que no aportan nada. Esta estructura en cuatro párrafos te ayuda a escribir una que conecte tu experiencia con lo que pide la oferta.</p></li><li><a href="guias/cv-ats.html">Cómo hacer un CV compatible con los filtros ATS</a><p>Qué es un ATS, cómo lee tu currículum y los cambios concretos que evitan que tu candidatura llegue incompleta a la persona que selecciona.</p></li></ul>
+      <p class="lp-more"><a href="guias/">Ver todas las guías</a></p>
+    </div>
+  </section>
+
   <section class="lp-final">
     <div class="lp-wrap lp-final-in">
       <h2>¿Listo para ver tu CV con los ojos de un ATS?</h2>
@@ -405,6 +425,7 @@ a { color: var(--pen); }
       <a href="privacidad.html">Privacidad</a>
       <a href="terminos.html">Términos de uso</a>
       <a href="condiciones.html">Condiciones de venta</a>
+      <a href="guias/">Guías</a>
       <a href="https://github.com/nazarbk" rel="noopener">Código en GitHub</a>
     </nav>
     <p>Hecho por Nazar Blanco Kataran</p>

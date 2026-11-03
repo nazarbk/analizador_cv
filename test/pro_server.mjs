@@ -66,6 +66,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 http.createServer(async (req, res) => {
   const u = new URL(req.url, SITE);
   if (u.pathname === '/__log') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ log, aiCalls, sessions: [...sessions].map(([k, v]) => ({ id: k, ...v })) })); return; }
+  if (u.pathname === '/__mark_paid') { const s = sessions.get(u.searchParams.get('session')); if (s) s.paid = true; res.end('ok'); return; }
   if (u.pathname === '/__mock_checkout') { const s = sessions.get(u.searchParams.get('session')); s.paid = true; res.writeHead(302, { location: s.success.replace('{CHECKOUT_SESSION_ID}', u.searchParams.get('session')) }); res.end(); return; }
   if (fns[u.pathname]) {
     const chunks = []; for await (const c of req) chunks.push(c);
