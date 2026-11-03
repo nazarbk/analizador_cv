@@ -681,7 +681,7 @@
     const s = PRO.s; s.phase = 'generating'; s.error = '';
     if (!s.edit) Object.assign(s, { edit: state.edit, trans: state.trans, text: state.text, meta: state.meta, cvLang: origLang() });
     const v = $('#v-pro'); proProgress(v); proStep(0, 4);
-    let acc = '', step = 0, extra = null;
+    let acc = '', txt = '', think = 0, step = 0, extra = null;
     try {
       const r = await fetch('/api/generate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ session_id: s.session, offer: s.offer, lang: s.lang, country: (state.r && state.r.country && state.r.country.name) || '', cv: proCvPayload() }) });
       if (!r.ok || !r.body) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'ia_no_disponible'); }
@@ -699,15 +699,20 @@
           let d; try { d = JSON.parse(line.slice(5)); } catch (e) { continue; }
           if (ev === 'informe_pro') extra = d;
           else if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'input_json_delta') acc += d.delta.partial_json || '';
+          else if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'text_delta') txt += d.delta.text || '';
+          else if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'thinking_delta') think += (d.delta.thinking || '').length;
           else if (d.type === 'message_stop') ended = true;
           else if (d.type === 'error') throw new Error(d.error && /overload/i.test(d.error.type || '') ? 'ia_saturada' : 'ia_no_disponible');
         }
-        const ns = acc.includes('"carta"') ? 4 : acc.includes('"cv"') ? 3 : acc.includes('"requisitos"') ? 2 : 1;
+        const all = acc + txt;
+        const ns = all.includes('"carta"') ? 4 : all.includes('"cv"') ? 3 : all.includes('"requisitos"') || think > 4000 ? 2 : 1;
         if (ns > step) step = ns;
-        proStep(step, 8 + Math.min(88, acc.length / 90));
+        proStep(step, 8 + Math.min(22, think / 400) + Math.min(66, all.length / 120));
       }
       if (!ended) throw new Error('red');
-      const res = JSON.parse(acc);
+      // normalmente llega como llamada a la herramienta; si el modelo respondió con el JSON en texto, se acepta también
+      let res = null;
+      try { res = JSON.parse(acc); } catch (e) { const a = txt.indexOf('{'), b = txt.lastIndexOf('}'); if (a >= 0 && b > a) { try { res = JSON.parse(txt.slice(a, b + 1)); } catch (x) { res = null; } } }
       if (!res || !res.cv || !res.carta || !res.encaje) throw new Error('ia_no_disponible');
       s.result = res; s.used = extra ? extra.generaciones : (s.used || 0) + 1; s.phase = 'done';
       proStep(5, 100);

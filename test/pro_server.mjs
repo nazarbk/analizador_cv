@@ -27,11 +27,16 @@ function aiStream(body) {
     carta: { asunto: 'Candidatura: Backend Developer', saludo: 'Estimado equipo de selección:', cuerpo: 'Párrafo uno sobre mi interés.\n\nPárrafo dos con logros reales y la web github.com/ejemplo.\n\nPárrafo tres de cierre.', despedida: 'Un saludo,' },
     avisos: ['Completa la cifra de proyectos entregados.']
   };
-  const js = JSON.stringify(out), parts = [];
+  if (b.tool_choice && b.tool_choice.type !== 'auto') throw Object.assign(new Error('tool_choice'), { mockStatus: 400 });
+  if ('temperature' in b) throw Object.assign(new Error('temperature'), { mockStatus: 400 });
+  const js = JSON.stringify(out), parts = [], asText = process.env.MOCK_TEXT === '1';
   for (let i = 0; i < js.length; i += 120) parts.push(js.slice(i, i + 120));
-  const events = [sse({ type: 'message_start', message: { id: 'msg_mock', model: b.model } }), sse({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu', name: 'entregar_informe', input: {} } })]
-    .concat(parts.map(p => sse({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: p } })))
-    .concat([sse({ type: 'content_block_stop', index: 0 }), sse({ type: 'message_delta', delta: { stop_reason: 'tool_use' } }), sse({ type: 'message_stop' })]);
+  // como un modelo con razonamiento: primero un bloque «thinking», luego la herramienta (o el JSON en texto)
+  const events = [sse({ type: 'message_start', message: { id: 'msg_mock', model: b.model } }), sse({ type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '' } })]
+    .concat(Array.from({ length: 6 }, () => sse({ type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: 'Analizo los requisitos de la oferta y el CV. '.repeat(20) } })))
+    .concat([sse({ type: 'content_block_stop', index: 0 }), sse(asText ? { type: 'content_block_start', index: 1, content_block: { type: 'text', text: '' } } : { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'tu', name: 'entregar_informe', input: {} } })])
+    .concat(parts.map(p => sse({ type: 'content_block_delta', index: 1, delta: asText ? { type: 'text_delta', text: p } : { type: 'input_json_delta', partial_json: p } })))
+    .concat([sse({ type: 'content_block_stop', index: 1 }), sse({ type: 'message_delta', delta: { stop_reason: asText ? 'end_turn' : 'tool_use' } }), sse({ type: 'message_stop' })]);
   const enc = new TextEncoder();
   return new ReadableStream({ async start(c) { for (const e of events) { c.enqueue(enc.encode(e)); await new Promise(r => setTimeout(r, 25)); } c.close(); } });
 }
@@ -50,7 +55,8 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.startsWith('https://api.anthropic.com/')) {
     aiCalls++; log.push({ ai: JSON.parse(init.body).model, headers: Object.keys(init.headers) , bodyLen: init.body.length, sent: JSON.parse(init.body).messages[0].content });
     if (FAIL_FIRST && aiCalls === 1) return new Response(JSON.stringify({ type: 'error', error: { type: 'overloaded_error' } }), { status: 529 });
-    return new Response(aiStream(init.body), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    try { return new Response(aiStream(init.body), { status: 200, headers: { 'content-type': 'text/event-stream' } }); }
+    catch (e) { return new Response(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'mock: ' + e.message } }), { status: e.mockStatus || 400 }); }
   }
   return realFetch(url, init);
 };
