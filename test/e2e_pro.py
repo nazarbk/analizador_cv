@@ -51,8 +51,12 @@ def run(port, fail_first=False):
                 # recarga: el informe sigue en este navegador, con la edición
                 pg.wait_for_timeout(800); pg.goto(B + 'analizador.html#pro'); pg.reload(); pg.wait_for_selector('#v-pro h3:text-is("Requisito a requisito")', timeout=15000)
                 print('tras recargar conserva edición:', pg.input_value('#pPer')[:30])
-                pg.click('#proAgain'); pg.wait_for_selector('#v-pro h3:text-is("Requisito a requisito")', timeout=30000); print('2ª generación ->', pg.text_content('#proAgain'))
-                pg.click('#proAgain'); pg.wait_for_selector('#v-pro h3:text-is("Requisito a requisito")', timeout=30000); print('3ª generación -> botón regenerar:', pg.locator('#proAgain').count())
+                pg.click('#proAgain'); pg.fill('#proOffer2', 'corta'); pg.click('#proRegenGo'); print('oferta corta en regenerar:', pg.text_content('#proWhy2'))
+                pg.fill('#proOffer2', OFFER.replace('Acme Data', 'Beta Labs')); pg.click('#proRegenGo')
+                pg.wait_for_selector('#v-pro h3:text-is("Requisito a requisito")', timeout=30000); print('2ª generación (otra oferta) ->', pg.text_content('#proAgain'), '| título:', pg.text_content('.pro-head h3')[:60])
+                pg.click('#proAgain'); pg.click('#proRegenGo'); pg.wait_for_selector('#v-pro h3:text-is("Requisito a requisito")', timeout=30000)
+                print('3ª generación -> regenerar:', pg.locator('#proAgain').count(), '| comprar otro:', pg.locator('#proNew').count())
+                print('nota puntuación:', pg.locator('#v-pro .sheet .small.muted').nth(1).text_content()[:160])
                 sid = [s for s in mlog(port)['sessions']][0]['id']
                 r = pg.request.post(B + 'api/generate', data=json.dumps({'session_id': sid, 'offer': OFFER, 'lang': 'es', 'cv': {'exp': []}}), headers={'content-type': 'application/json'})
                 print('4ª por API:', r.status, r.json())

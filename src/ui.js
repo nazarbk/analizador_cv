@@ -575,8 +575,9 @@
   function proScores() {
     const offer = PRO.s.offer, opts = Object.assign(currentOpts(), { offer });
     const before = E.analyze({ text: PRO.s.text || state.text, meta: PRO.s.meta || state.meta, opts });
+    const general = E.analyze({ text: PRO.s.text || state.text, meta: PRO.s.meta || state.meta, opts: Object.assign(currentOpts(), { offer: '' }) }).total;
     const after = E.analyze({ text: T.toText(T.blocks(proMerged(), proTplOpts())), meta: Object.assign({}, PRO.s.meta || state.meta, { fileType: 'pdf', columns: false, tables: 0, textBoxes: 0, headerFooterContact: false, tinyText: 0, spaced: 0, fonts: 2 }), opts });
-    return { before: { total: before.total, kw: before.offer ? before.offer.score : 0 }, after: { total: after.total, kw: after.offer ? after.offer.score : 0 }, missing: after.offer ? after.offer.keywords.filter(k => !k.found).map(k => k.term).slice(0, 10) : [] };
+    return { general, before: { total: before.total, kw: before.offer ? before.offer.score : 0 }, after: { total: after.total, kw: after.offer ? after.offer.score : 0 }, missing: after.offer ? after.offer.keywords.filter(k => !k.found).map(k => k.term).slice(0, 10) : [] };
   }
 
   function renderPro() {
@@ -620,9 +621,9 @@
       '<div class="toolbar"><button class="btn primary" type="button" id="proPay" disabled>Pagar ' + PRO.price + ' y generar el informe</button><span class="small muted">Pago seguro con Stripe · IVA incluido · Hasta ' + PRO.max + ' generaciones durante 30 días</span></div>' +
       '<p class="small pro-why" id="proWhy" aria-live="polite"></p>' +
       '<p class="small" id="proMsg" role="status"></p></div>';
-    const upd = () => {
+    const upd = ev => {
       const t = $('#proOffer').value.trim(), c1 = $('#proC1').checked, c2 = $('#proC2').checked;
-      Object.assign(d, { offer: $('#proOffer').value, lang: $('#proLang').value, c1, c2 });
+      if (ev) Object.assign(d, { offer: $('#proOffer').value, lang: $('#proLang').value, c1, c2 });   // solo lo que escribe la persona
       $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos): faltan unos ' + (150 - t.length) + ' caracteres.' : '';
       // explica qué falta para poder pagar, en lugar de dejar el botón desactivado sin más
       const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? 'Para continuar, marca las dos casillas.' : '';
@@ -661,7 +662,7 @@
       if (p.company && D.COMPANY_TYPES[p.company]) $('#company').value = p.company;
       run(false);
     }
-    if (param === 'cancelado') { PRO.s = p ? { offer: p.offer, lang: p.lang } : null; renderPro(); go('pro'); toast('Pago cancelado: no se ha cobrado nada'); return; }
+    if (param === 'cancelado') { PRO.s = p ? { offer: p.offer, lang: p.lang } : null; PRO.draft = null; renderPro(); go('pro'); toast('Pago cancelado: no se ha cobrado nada'); return; }
     if (!p) { PRO.s = { session: param, phase: 'error', error: 'sin_datos' }; renderPro(); go('pro'); return; }
     const saved = await idbGet('pro-result:' + param);
     PRO.s = { session: param, offer: p.offer, lang: p.lang, cvLang: p.cvLang, edit: p.edit, trans: p.trans, text: p.text, meta: p.meta, result: saved && saved.result, used: saved && saved.used };
@@ -745,11 +746,16 @@
     const warns = (res.avisos || []).map(t => '<li>' + h(t) + '</li>').join('');
     const cv = res.cv || {};
     const expEd = (cv.experiencia || []).map(x => { const o = m.exp[x.indice]; return o ? '<div class="cf"><label class="label" for="pe' + x.indice + '">' + h([o.title, o.company].filter(Boolean).join(' — ')) + '</label><textarea id="pe' + x.indice + '" rows="' + Math.min(8, Math.max(3, String(x.descripcion || '').split('\n').length + 1)) + '" data-pro="exp.' + x.indice + '">' + h(x.descripcion) + '</textarea><div class="side"><button class="btn small" type="button" data-copy="pe' + x.indice + '">Copiar</button></div></div>' : ''; }).join('');
-    v.innerHTML = '<div class="sheet pro-head"><div><span class="label">Informe Pro · ' + (s.lang === 'en' ? 'en inglés' : 'en español') + '</span><h3>' + h((s.offer || '').split('\n').find(l => l.trim()) || 'Tu oferta') + '</h3><p class="small muted">Revisa todo antes de enviarlo: la IA puede equivocarse, y lo que va entre corchetes tienes que completarlo tú.</p></div>' +
-      '<div class="pro-actions"><button class="btn" type="button" id="proNew">Otra oferta (nuevo pago)</button>' + (left > 0 ? '<button class="btn" type="button" id="proAgain">Generar de nuevo (' + left + (left === 1 ? ' restante' : ' restantes') + ')</button>' : '') + '<button class="btn" type="button" id="proForget">Borrar de este navegador</button></div></div>' +
+    v.innerHTML = '<div class="sheet pro-head"><div><span class="label">Informe Pro · ' + (s.lang === 'en' ? 'en inglés' : 'en español') + '</span><h3>' + h(((t => t.length > 90 ? t.slice(0, 88).replace(/\s+\S*$/, '') + '…' : t)(((s.offer || '').split('\n').find(l => l.trim()) || 'Tu oferta').trim()))) + '</h3><p class="small muted">Revisa todo antes de enviarlo: la IA puede equivocarse, y lo que va entre corchetes tienes que completarlo tú.</p></div>' +
+      '<div class="pro-actions">' + (left > 0 ? '<button class="btn primary" type="button" id="proAgain" aria-expanded="false" aria-controls="proRegen">Nuevo informe con este pedido (' + left + (left === 1 ? ' restante' : ' restantes') + ')</button>' : '<button class="btn primary" type="button" id="proNew">Comprar otro informe</button>') + '<button class="btn" type="button" id="proForget">Borrar de este navegador</button></div>' +
+      (left > 0 ? '<div class="pro-regen" id="proRegen" hidden><p class="small">Te ' + (left === 1 ? 'queda 1 informe' : 'quedan ' + left + ' informes') + ' incluidos en este pedido, válidos 30 días desde la compra. Puedes usarlos para otra oferta o para obtener otra redacción con la misma.</p>' +
+        '<div class="field"><label class="label" for="proOffer2">Oferta de trabajo</label><textarea id="proOffer2" rows="7">' + h(s.offer || '') + '</textarea></div>' +
+        '<div class="field pro-lang"><label class="label" for="proLang2">Idioma del informe</label><select id="proLang2"><option value="es"' + (s.lang === 'es' ? ' selected' : '') + '>Español</option><option value="en"' + (s.lang === 'en' ? ' selected' : '') + '>Inglés</option></select></div>' +
+        '<div class="toolbar"><button class="btn primary" type="button" id="proRegenGo">Generar el informe (gasta 1 de ' + left + ')</button><span class="small muted">El informe actual se sustituye por el nuevo.</span></div><p class="small pro-why" id="proWhy2"></p></div>' : '') + '</div>' +
       '<div class="cols"><div class="sheet"><h3>Encaje con la oferta</h3><div class="pro-score"><div class="pro-ring" style="--v:' + (en.puntuacion || 0) + '"><b class="num">' + (en.puntuacion || 0) + '</b><small>/100</small></div><p>' + h(en.veredicto || '') + '</p></div>' +
-      '<div class="pro-deltas"><div><span class="label">Palabras clave de la oferta</span>' + delta(sc.before.kw, sc.after.kw, ' %') + '</div><div><span class="label">Puntuación ATS global</span>' + delta(sc.before.total, sc.after.total, '') + '</div></div>' +
-      '<p class="small muted">Puntuación ATS calculada por el analizador con tu CV original y con el CV adaptado, frente a la misma oferta.</p></div>' +
+      '<div class="pro-deltas"><div><span class="label">Palabras clave de la oferta</span>' + delta(sc.before.kw, sc.after.kw, ' %') + '</div><div><span class="label">Puntuación con esta oferta</span>' + delta(sc.before.total, sc.after.total, '') + '</div></div>' +
+      '<p class="small muted">Antes: tu CV original. Después: el CV adaptado. Ambos medidos por el analizador frente a esta oferta.' + (sc.general !== sc.before.total ? ' Sin ninguna oferta, tu CV obtiene <b>' + sc.general + '/100</b> (la puntuación general del panel izquierdo); con esta oferta ' + (sc.before.total < sc.general ? 'baja' : 'cambia') + ' a ' + sc.before.total + ' porque se suma cuánto coincide con lo que pide.' : '') + '</p>' +
+      (sc.after.kw <= sc.before.kw ? '<p class="small muted">Las palabras clave no suben porque las que faltan no aparecen en tu experiencia, y el informe no las añade por ti. Si de verdad las dominas, inclúyelas tú: las tienes en «Antes de enviar».</p>' : '') + '</div>' +
       '<div class="sheet"><h3>Antes de enviar</h3>' + (tips ? '<ol class="prio">' + tips + '</ol>' : '') + (missing ? '<p class="label" style="margin-top:12px">Palabras de la oferta que no aparecen en tu CV</p><div class="chips">' + missing + '</div><p class="small muted">Añádelas solo si de verdad tienes esa experiencia.</p>' : '') + (warns ? '<div class="callout warn"><strong>Completa o comprueba</strong><ul>' + warns + '</ul></div>' : '') + '</div></div>' +
       '<div class="sheet"><h3>Requisito a requisito</h3><ul class="checks">' + (reqs || '<li>No se han identificado requisitos.</li>') + '</ul></div>' +
       '<div class="sheet"><h3>Tu CV adaptado</h3><p class="lede">Puedes retocar cualquier texto: las descargas usan lo que ves aquí. Formación, idiomas y contacto salen de tus datos.</p>' +
@@ -763,9 +769,16 @@
       '<div class="toolbar">' + (DL ? '<button class="btn primary" type="button" id="proLetPdf">Descargar carta en PDF</button><button class="btn" type="button" id="proLetDocx">Descargar carta en Word</button>' : '') + '</div></div>';
     $$('#v-pro [data-pro]').forEach(inp => inp.addEventListener('input', () => { proApplyEdit(inp.dataset.pro, inp.value); proSaveSoon(); }));
     $$('#v-pro [data-copy]').forEach(b => b.addEventListener('click', () => { const el = document.getElementById(b.dataset.copy); copyText(el.value, el); }));
-    if ($('#proAgain')) $('#proAgain').addEventListener('click', () => { if (confirm('Se generará un informe nuevo y se gastará uno de los intentos incluidos. ¿Continuar?')) { s.result = null; proGenerate(); } });
+    if ($('#proAgain')) {
+      $('#proAgain').addEventListener('click', () => { const r = $('#proRegen'), open = r.hidden; r.hidden = !open; $('#proAgain').setAttribute('aria-expanded', String(open)); if (open) $('#proOffer2').focus(); });
+      $('#proRegenGo').addEventListener('click', () => {
+        const t = $('#proOffer2').value.trim();
+        if (t.length < 150) { $('#proWhy2').textContent = 'Pega la oferta completa: título, funciones y requisitos.'; return; }
+        Object.assign(s, { offer: t, lang: $('#proLang2').value, result: null }); proGenerate();
+      });
+    }
     $('#proForget').addEventListener('click', async () => { if (!confirm('Se borrará el informe de este navegador. Podrás volver a generarlo mientras te queden intentos, desde el enlace de tu recibo. ¿Borrarlo?')) return; await idbDel('pro-result:' + s.session); await idbDel('pro-pending'); await idbDel('pro-last'); PRO.s = null; renderPro(); toast('Informe borrado de este navegador'); });
-    $('#proNew').addEventListener('click', () => { PRO.s = { offer: '', lang: s.lang }; renderPro(); });
+    if ($('#proNew')) $('#proNew').addEventListener('click', () => { PRO.s = { offer: '', lang: s.lang }; PRO.draft = null; renderPro(); });
     const base = ((s.edit || state.edit).name || 'CV').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'CV';
     const sfx = s.lang === 'en' ? '-EN' : '';
     $('#proCvTxt').addEventListener('click', () => copyText(T.toText(T.blocks(proMerged(), proTplOpts()))));
