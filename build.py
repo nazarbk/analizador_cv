@@ -130,12 +130,13 @@ def build_artifact():
     open(p, 'w', encoding='utf-8').write(html)
     return p, len(html.encode())
 
-TOOL_DESC = 'Analiza tu CV en el navegador, sin enviarlo a ningún servidor: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas, datos para copiar y CV en PDF o Word.'
+TOOL_DESC = 'Analiza gratis tu CV en el navegador, sin subirlo a ningún servidor: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y CV en PDF o Word.'
 HOME_TITLE = 'Analizador de CV gratis: comprueba tu CV para los filtros ATS'
-HOME_DESC = 'Analiza tu CV gratis y sin registro: compatibilidad con ATS, puntos fuertes y débiles, coincidencia con ofertas y un CV listo en PDF o Word. Tu CV no sale de tu navegador.'
+HOME_DESC = 'Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.'
 
 def build_landing(out, base_css):
     body = read('landing.html'); js = read('landing.js')
+    body = body.replace('<!--GUIAS-->', '<ul class="lp-guides">' + ''.join('<li><a href="guias/%s.html">%s</a><p>%s</p></li>' % (g['slug'], g['h1'], g['lede']) for g in load_guides()) + '</ul>')
     h = base64.b64encode(hashlib.sha256(('\n' + js + '\n').encode()).digest()).decode()
     csp = ("default-src 'self'; script-src 'self' 'sha256-%s'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
            "connect-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'") % h
@@ -168,6 +169,102 @@ def build_landing(out, base_css):
           '<div class="b"><a href="/analizador.html">Analizar mi CV</a><a href="/">Ir al inicio</a></div></main>\n</body>\n</html>\n') % (icon_links('/'), TOKENS)
     open(os.path.join(out, '404.html'), 'w', encoding='utf-8').write(nf)
 
+GUIDE_CSS = """
+.lp-article { max-width: 760px; margin: 0 auto; padding: 36px max(20px, env(safe-area-inset-left, 0px)) 72px; }
+.crumbs { font-size: 14px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px; }
+.crumbs a { color: var(--ink-2); }
+.lp-article h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.12; margin-top: 18px; }
+.lp-article .lede { font-size: 19px; color: var(--ink-2); margin-top: 14px; }
+.byline { font-size: 14px; color: var(--ink-3); margin-top: 14px; }
+.toc-box { margin: 26px 0 8px; padding: 16px 20px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; }
+.toc-box strong { font: 600 14px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.toc-box ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.prose h2 { font-size: 26px; margin-top: 40px; scroll-margin-top: 80px; }
+.prose p, .prose li { font-size: 17px; line-height: 1.7; color: var(--ink); }
+.prose p { margin-top: 14px; }
+.prose ul, .prose ol { margin-top: 12px; padding-left: 22px; display: grid; gap: 8px; }
+.prose blockquote { margin: 18px 0; padding: 4px 20px; border-left: 4px solid var(--lila-line); background: var(--lila-soft); border-radius: 0 10px 10px 0; }
+.cta-box { margin-top: 44px; padding: 24px; border-radius: 14px; background: linear-gradient(110deg, var(--pen-soft), var(--lila-soft)); border: 1px solid var(--pen-line); display: grid; gap: 12px; }
+.cta-box h2 { font-size: 22px; margin: 0; }
+.cta-box .lp-cta { margin-top: 4px; }
+.related { margin-top: 40px; }
+.related h2 { font-size: 20px; }
+.related ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+.related a { font-weight: 600; }
+.guide-list { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 16px; }
+.guide-list li { padding: 20px 22px; border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); }
+.guide-list a { font: 600 20px/1.3 var(--serif); text-decoration: none; color: var(--ink); }
+.guide-list a:hover { color: var(--pen-strong); }
+.guide-list p { color: var(--ink-2); margin-top: 6px; }
+"""
+
+def _abs_links(html):
+    import re as _r
+    def fix(m):
+        attr, url = m.group(1), m.group(2)
+        if _r.match(r'^(https?:|mailto:|/|data:)', url): return m.group(0)
+        if url in ('./', ''): url = ''
+        return '%s="/%s"' % (attr, url)
+    return _r.sub(r'(href|src)="([^"]*)"', fix, html)
+
+def _chrome():
+    body = read('landing.html')
+    import re as _r
+    header = _r.search(r'<header class="lp-top">.*?</header>', body, _r.S).group(0)
+    footer = _r.search(r'<footer class="lp-foot">.*?</footer>', body, _r.S).group(0)
+    header = header.replace('<a class="lp-btn lp-btn-ghost lp-nav-cta" href="analizador.html">Abrir el analizador</a>', '<a class="lp-btn lp-btn-primary lp-nav-cta" href="analizador.html">Analizar mi CV gratis</a>')
+    return _abs_links(header), _abs_links(footer)
+
+def load_guides():
+    import re as _r
+    gdir = os.path.join(SRC, 'guias'); out = []
+    for fn in sorted(os.listdir(gdir)):
+        if not fn.endswith('.html'): continue
+        raw = open(os.path.join(gdir, fn), encoding='utf-8').read()
+        meta = json.loads(_r.match(r'<!--(.*?)-->', raw, _r.S).group(1))
+        meta['slug'] = fn[:-5]; meta['body'] = raw[raw.index('-->') + 3:].strip()
+        meta['toc'] = _r.findall(r'<h2 id="([^"]+)">(.*?)</h2>', meta['body'])
+        meta['words'] = len(_r.sub(r'<[^>]+>', ' ', meta['body']).split())
+        out.append(meta)
+    return out
+
+def _page(title, desc, path, body_html, ld, extra_css=''):
+    csp = "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    return ('<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            '<meta http-equiv="Content-Security-Policy" content="%s">\n<title>%s</title>\n<meta name="description" content="%s">\n%s%s'
+            '<script type="application/ld+json">%s</script>\n<style>\n%s\n%s\n%s\n%s\n</style>\n</head>\n<body>\n%s\n</body>\n</html>\n') % (
+            csp, title, desc, icon_links('/'), seo_meta(title, desc, path), json.dumps(ld, ensure_ascii=False), ':root{padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}', TOKENS, read('landing.css'), GUIDE_CSS + extra_css, body_html)
+
+def build_guides(out):
+    gs = load_guides(); header, footer = _chrome()
+    os.makedirs(os.path.join(out, 'guias'), exist_ok=True)
+    fmt = lambda d: '%d de %s de %s' % (int(d[8:10]), ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][int(d[5:7]) - 1], d[:4])
+    for g in gs:
+        path = 'guias/%s.html' % g['slug']
+        others = [o for o in gs if o['slug'] != g['slug']]
+        toc = '<nav class="toc-box" aria-label="Contenido"><strong>En esta guía</strong><ol>' + ''.join('<li><a href="#%s">%s</a></li>' % (i, t) for i, t in g['toc']) + '</ol></nav>'
+        cta = ('<aside class="cta-box"><h2>Comprueba tu CV gratis</h2><p>El Analizador de CV revisa tu currículum como lo haría un ATS y te dice qué arreglar, por prioridad. Se analiza en tu navegador: no se sube a ningún servidor.</p>'
+               '<div class="lp-cta"><a class="lp-btn lp-btn-primary" href="/analizador.html">Analizar mi CV gratis</a><a class="lp-btn lp-btn-ghost" href="/analizador.html#pro">Ver el Informe Pro</a></div></aside>')
+        rel = '<section class="related"><h2>Otras guías</h2><ul>' + ''.join('<li><a href="/guias/%s.html">%s</a></li>' % (o['slug'], o['h1']) for o in others) + '</ul></section>'
+        main = ('<main id="main" class="lp-article"><nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">›</span><a href="/guias/">Guías</a><span aria-hidden="true">›</span><span>%s</span></nav>'
+                '<article><h1>%s</h1><p class="lede">%s</p><p class="byline">Por Nazar Blanco Kataran · Actualizada el %s · %d min de lectura</p>%s<div class="prose">%s</div></article>%s%s</main>') % (
+                g['h1'], g['h1'], g['lede'], fmt(g['date']), max(2, round(g['words'] / 220)), toc, g['body'], cta, rel)
+        ld = [{'@context': 'https://schema.org', '@type': 'Article', 'headline': g['h1'], 'description': g['description'], 'inLanguage': 'es', 'datePublished': g['date'], 'dateModified': g['date'],
+               'author': {'@type': 'Person', 'name': AUTHOR, 'url': 'https://github.com/nazarbk'}, 'publisher': {'@type': 'Person', 'name': AUTHOR},
+               'image': SITE_URL + '/assets/og-image.png', 'mainEntityOfPage': SITE_URL + '/' + path},
+              {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
+                  {'@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': SITE_URL + '/'},
+                  {'@type': 'ListItem', 'position': 2, 'name': 'Guías', 'item': SITE_URL + '/guias/'},
+                  {'@type': 'ListItem', 'position': 3, 'name': g['h1'], 'item': SITE_URL + '/' + path}]}]
+        html = _page(g['title'], g['description'], path, '<a class="skip" href="#main">Saltar al contenido</a>\n' + header + main + footer, ld)
+        open(os.path.join(out, path), 'w', encoding='utf-8').write(html)
+    lst = '<ul class="guide-list">' + ''.join('<li><a href="/guias/%s.html">%s</a><p>%s</p></li>' % (g['slug'], g['h1'], g['lede']) for g in gs) + '</ul>'
+    main = ('<main id="main" class="lp-article"><nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">›</span><span>Guías</span></nav>'
+            '<h1>Guías para mejorar tu CV</h1><p class="lede">Consejos prácticos y sin humo para que tu currículum pase los filtros ATS y convenza a quien lo lee.</p>%s</main>') % lst
+    ld = {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': 'Guías para mejorar tu CV', 'url': SITE_URL + '/guias/', 'inLanguage': 'es'}
+    open(os.path.join(out, 'guias', 'index.html'), 'w', encoding='utf-8').write(_page('Guías para mejorar tu CV y pasar los filtros ATS', 'Guías prácticas para hacer un CV compatible con ATS, adaptarlo a cada oferta y escribir una carta de presentación que no suene genérica.', 'guias/', '<a class="skip" href="#main">Saltar al contenido</a>\n' + header + main + footer, ld))
+    return gs
+
 def copy_assets(out):
     os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
     for f in ('icon.svg', 'icon-16.png', 'icon-32.png', 'icon-48.png', 'icon-192.png', 'icon-512.png', 'og-image.png'):
@@ -181,7 +278,7 @@ def copy_assets(out):
     open(os.path.join(out, 'site.webmanifest'), 'w', encoding='utf-8').write(json.dumps(manifest, ensure_ascii=False, indent=2))
     import datetime
     today = datetime.date.today().isoformat()
-    urls = [('', '1.0'), ('analizador.html', '0.9'), ('condiciones.html', '0.3'), ('privacidad.html', '0.3'), ('aviso-legal.html', '0.2'), ('terminos.html', '0.2')]
+    urls = [('', '1.0'), ('analizador.html', '0.9'), ('guias/', '0.7')] + [('guias/%s.html' % g['slug'], '0.7') for g in load_guides()] + [('condiciones.html', '0.3'), ('privacidad.html', '0.3'), ('aviso-legal.html', '0.2'), ('terminos.html', '0.2')]
     sm = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(
         '  <url><loc>%s/%s</loc><lastmod>%s</lastmod><priority>%s</priority></url>\n' % (SITE_URL, u, today, pr) for u, pr in urls) + '</urlset>\n'
     open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8').write(sm)
@@ -208,6 +305,7 @@ def build_selfhost():
             '<style>\n%s%s\n</style>\n</head>\n<body>\n%s\n%s\n</body>\n</html>\n') % (csp, TOOL_DESC, icon_links(), seo_meta('Analizador de CV · Análisis ATS en tu navegador', TOOL_DESC, 'analizador.html'), base_css, css, markup, '\n'.join('<script>\n' + s + '\n</script>' for s in ss))
     open(os.path.join(out, 'analizador.html'), 'w', encoding='utf-8').write(html)
     build_landing(out, base_css)
+    build_guides(out)
     copy_assets(out)
     for fn, (title, body) in PAGES.items():
         open(os.path.join(out, fn), 'w', encoding='utf-8').write(PAGE_TPL.format(title=title, body=body, icons=icon_links(), canonical=SITE_URL + '/' + fn))

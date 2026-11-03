@@ -53,12 +53,13 @@ export async function verifyPurchase(sessionId) {
   try { s = await stripe('GET', '/checkout/sessions/' + encodeURIComponent(sessionId)); }
   catch (e) { return { ok: false, status: e.status === 404 ? 404 : 502, error: e.status === 404 ? 'pedido_no_encontrado' : 'stripe_no_disponible' }; }
   if (s.payment_status !== 'paid' || (s.metadata && s.metadata.producto) !== 'informe-pro') return { ok: false, status: 402, error: 'pago_no_completado' };
-  if (s.created && Date.now() / 1000 - s.created > VALID_DAYS * 86400) return { ok: false, status: 410, error: 'pedido_caducado' };
+  const caduca = s.created ? (s.created + VALID_DAYS * 86400) * 1000 : null;
+  if (caduca && Date.now() > caduca) return { ok: false, status: 410, error: 'pedido_caducado', caduca };
   const piId = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent && s.payment_intent.id;
   let used = 0;
   if (piId) { const pi = await stripe('GET', '/payment_intents/' + encodeURIComponent(piId)); used = parseInt((pi.metadata || {}).generaciones || '0', 10) || 0; }
-  if (used >= MAX_GENERATIONS) return { ok: false, status: 429, error: 'limite_generaciones', used };
-  return { ok: true, piId, used, email: s.customer_details && s.customer_details.email };
+  if (used >= MAX_GENERATIONS) return { ok: false, status: 429, error: 'limite_generaciones', used, caduca };
+  return { ok: true, piId, used, caduca, email: s.customer_details && s.customer_details.email };
 }
 export async function countGeneration(piId, used) {
   if (!piId) return;

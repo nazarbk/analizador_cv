@@ -14,7 +14,7 @@ La regla: **todo lo que ya existe sigue gratis** (es lo que atrae tráfico por S
 | **Encaje requisito a requisito** (cumple / parcial / no cumple, con evidencia) y palabras clave que faltan | | ✔ |
 | **Puntuación ATS antes y después** de adaptar el CV, frente a esa oferta | | ✔ |
 | Resultado en español o en inglés | | ✔ |
-| Generaciones por compra | | 3 en 30 días |
+| Informes por compra | | 3 en 30 días, para la misma oferta o para otras, con cualquier CV |
 
 Por qué así:
 - **La puntuación ATS se queda gratis.** Es el gancho de búsquedas como «comprobar CV ATS», y quitarla rompería la promesa de la portada. En el Informe Pro se vende la puntuación **frente a una oferta**, con el antes y el después.
@@ -43,6 +43,7 @@ PDF y Word se generan en el navegador
 - **Sin dependencias de npm.** Las funciones usan `fetch` contra las APIs REST de Stripe y Anthropic.
 - **Edge Functions** porque la generación tarda entre 30 y 60 segundos: en streaming no tienen límite de duración, siempre que empiecen a responder en menos de 40 segundos.
 - Si la IA falla o se corta la conexión, el intento **no se cuenta**. Solo se cuenta cuando el informe llega completo.
+- **Nada pagado se pierde en el navegador:** el monedero local (`pro-wallet`) guarda el código de cada compra y se sincroniza con Stripe (`/api/estado`). Cada informe guarda su propia copia del CV y de la oferta, así que se puede subir otro CV y usar los informes restantes con él; borrar un informe no borra la compra; si la pestaña se cierra justo después de pagar, la compra aparece al volver a entrar; y con el **enlace de la compra** (`/analizador.html?pro=<código>`) se usa en otro navegador.
 
 Archivos:
 - `netlify/edge-functions/checkout.js`: `POST /api/checkout`, crea la sesión de Stripe.
@@ -85,7 +86,7 @@ Sin `STRIPE_SECRET_KEY` y `ANTHROPIC_API_KEY`, la sección Informe Pro se oculta
 
 ### 3.5 Prueba en real (modo de prueba)
 1. Despliega, abre el analizador, sube tu CV, pega una oferta y paga con la tarjeta de prueba `4242 4242 4242 4242`.
-2. Comprueba que se genera el informe, que «Generar de nuevo» resta intentos y que en Stripe el pago tiene `metadata.generaciones`.
+2. Comprueba que se genera el informe, que «Nuevo informe» resta uno de los 3, que puedes subir otro CV y seguir usando los que quedan y que en Stripe el pago tiene `metadata.generaciones`.
 3. Cambia a claves `live` y haz una compra real tuya (puedes reembolsarla desde Stripe).
 
 ### 3.6 Prueba local
