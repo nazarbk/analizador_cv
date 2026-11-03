@@ -449,3 +449,6 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
 .chip.kw { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--lila-soft); color: var(--lila-ink); border: 1px solid var(--lila-line); }
 .pro-gen { margin-top: 0; }
 @media (max-width: 760px) { .pro-feats, .pro-deltas { grid-template-columns: minmax(0, 1fr); } .pro-cmp td:nth-child(n+2), .pro-cmp th:nth-child(n+2) { width: auto; } }
+
+.pro-why { color: var(--warn); font-weight: 600; margin-top: 8px; }
+.pro-why:empty { display: none; }

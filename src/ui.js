@@ -597,8 +597,10 @@
     renderProSale(v);
   }
   function renderProSale(v) {
-    const offer = (PRO.s && PRO.s.offer) || getOffers()[0] || '';
-    const lang = proLang();
+    // lo que la persona ya ha escrito se conserva aunque el informe se vuelva a pintar (al subir otro CV, cambiar de país…)
+    const d = PRO.draft || (PRO.draft = {});
+    const offer = d.offer != null ? d.offer : ((PRO.s && PRO.s.offer) || getOffers()[0] || '');
+    const lang = d.lang || proLang();
     v.innerHTML = '<div class="sheet pro-hero"><span class="label">Informe Pro · pago único de ' + PRO.price + '</span><h3>Tu CV adaptado a la oferta que te interesa</h3>' +
       '<p class="lede">El análisis gratuito te dice qué falla en tu CV. El Informe Pro lo arregla para una oferta concreta: reescribe tu perfil y tus experiencias con las palabras clave que busca esa empresa, escribe la carta de presentación y te dice, requisito a requisito, cómo encajas.</p>' +
       '<div class="pro-feats">' +
@@ -613,15 +615,21 @@
       (state.sample ? '<p class="banner">Primero sube tu CV con «Subir CV»: el informe se hace sobre tu currículum, no sobre el de ejemplo.</p>' : '') +
       '<div class="field"><label class="label" for="proOffer">Oferta de trabajo</label><textarea id="proOffer" rows="8" placeholder="Pega la oferta completa: título del puesto, empresa, funciones y requisitos">' + h(offer) + '</textarea><span class="small muted" id="proOfferHint"></span></div>' +
       '<div class="field pro-lang"><label class="label" for="proLang">Idioma del informe</label><select id="proLang"><option value="es"' + (lang === 'es' ? ' selected' : '') + '>Español</option><option value="en"' + (lang === 'en' ? ' selected' : '') + '>Inglés</option></select></div>' +
-      '<label class="toggle consent"><input type="checkbox" id="proC1"> <span>Acepto que el texto de mi CV (sin mi nombre ni mis datos de contacto) y la oferta se envíen a Anthropic, el proveedor de IA, solo para generar este informe. No se guardan en esta web. <a href="privacidad.html#informe-pro" target="_blank" rel="noopener">Más información</a></span></label>' +
-      '<label class="toggle consent"><input type="checkbox" id="proC2"> <span>Quiero recibir el informe en cuanto pague y acepto que, una vez generado, pierdo el derecho de desistimiento. <a href="condiciones.html" target="_blank" rel="noopener">Condiciones de venta</a></span></label>' +
+      '<label class="toggle consent"><input type="checkbox" id="proC1"' + (d.c1 ? ' checked' : '') + '> <span>Acepto que el texto de mi CV (sin mi nombre ni mis datos de contacto) y la oferta se envíen a Anthropic, el proveedor de IA, solo para generar este informe. No se guardan en esta web. <a href="privacidad.html#informe-pro" target="_blank" rel="noopener">Más información</a></span></label>' +
+      '<label class="toggle consent"><input type="checkbox" id="proC2"' + (d.c2 ? ' checked' : '') + '> <span>Quiero recibir el informe en cuanto pague y acepto que, una vez generado, pierdo el derecho de desistimiento. <a href="condiciones.html" target="_blank" rel="noopener">Condiciones de venta</a></span></label>' +
       '<div class="toolbar"><button class="btn primary" type="button" id="proPay" disabled>Pagar ' + PRO.price + ' y generar el informe</button><span class="small muted">Pago seguro con Stripe · IVA incluido · Hasta ' + PRO.max + ' generaciones durante 30 días</span></div>' +
+      '<p class="small pro-why" id="proWhy" aria-live="polite"></p>' +
       '<p class="small" id="proMsg" role="status"></p></div>';
     const upd = () => {
-      const t = $('#proOffer').value.trim();
-      $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos).' : '';
-      $('#proPay').disabled = state.sample || t.length < 150 || !$('#proC1').checked || !$('#proC2').checked;
+      const t = $('#proOffer').value.trim(), c1 = $('#proC1').checked, c2 = $('#proC2').checked;
+      Object.assign(d, { offer: $('#proOffer').value, lang: $('#proLang').value, c1, c2 });
+      $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos): faltan unos ' + (150 - t.length) + ' caracteres.' : '';
+      // explica qué falta para poder pagar, en lugar de dejar el botón desactivado sin más
+      const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? 'Para continuar, marca las dos casillas.' : '';
+      $('#proWhy').textContent = why;
+      $('#proPay').disabled = !!why;
     };
+    $('#proLang').addEventListener('change', upd);
     ['#proOffer', '#proC1', '#proC2'].forEach(s => $(s).addEventListener('input', upd));
     $('#proC1').addEventListener('change', upd); $('#proC2').addEventListener('change', upd);
     upd();
@@ -629,6 +637,7 @@
   }
   async function proCheckout() {
     const btn = $('#proPay'), msg = $('#proMsg');
+    PRO.draft = null;
     btn.disabled = true; msg.className = 'small'; msg.textContent = 'Preparando el pago seguro…';
     const pending = { text: state.text, meta: state.meta, label: state.label, edit: state.edit, trans: state.trans, tpl: state.tpl, country: $('#country').value, company: $('#company').value, offer: $('#proOffer').value.trim(), lang: $('#proLang').value, cvLang: origLang(), at: Date.now() };
     await idbSet('pro-pending', pending);
