@@ -562,6 +562,45 @@
   }
 
   // ---------- análisis principal ----------
+
+  // ¿Es un CV? Suma señales típicas de un currículum y resta las de otros documentos (facturas, contratos,
+  // artículos, cartas, ofertas de empleo…). No bloquea nada por sí sola: la interfaz pregunta antes de analizar.
+  const NOT_CV = [
+    ['una factura o un recibo', /\b(factura|invoice|base imponible|importe total|total a pagar|subtotal|n\.?\s?de factura|fecha de vencimiento|forma de pago|iban|receipt|amount due|vat number|ticket)\b/g],
+    ['un contrato o un documento legal', /\b(clausula|clausulas|las partes|en virtud de|contratante|arrendador|arrendatario|el presente contrato|reunidos|exponen|hereby|whereas|agreement|terms and conditions|jurisdiccion)\b/g],
+    ['un artículo o un trabajo académico', /\b(abstract|resumen ejecutivo|palabras clave|keywords|introduccion|metodologia|methodology|conclusiones|conclusions|bibliografia|references|et al|doi|figura \d|figure \d|tabla \d|table \d|hipotesis)\b/g],
+    ['una carta', /\b(estimado|estimada|estimados|atentamente|cordialmente|me dirijo|dear|sincerely|yours faithfully|kind regards|a quien corresponda)\b/g],
+    ['una oferta de empleo', /\b(buscamos|ofrecemos|se valorara|valorable|requisitos minimos|incorporacion inmediata|what we offer|we are looking for|you will|responsibilities|requirements|nice to have|salario|banda salarial|tipo de contrato|jornada completa)\b/g],
+    ['un temario, unos apuntes o un manual', /\b(tema \d+|capitulo \d+|chapter \d+|ejercicio \d+|exercise \d+|indice|leccion \d+|unidad \d+|apartado \d+)\b/g],
+    ['una receta o un menú', /\b(ingredientes|ingredients|preparacion|cucharada|gramos de|al horno|minutos a fuego|precalienta)\b/g]
+  ];
+  function docCheck(x) {
+    const why = [];
+    let pos = 0;
+    const strong = ['experience', 'education', 'skills', 'languages', 'summary', 'projects', 'certifications', 'courses'].filter(k => x.present.includes(k));
+    pos += Math.min(6, strong.length * 2);
+    if (x.email) pos += 2; if (x.phone) pos += 1; if (x.linkedin) pos += 2; if (x.name) pos += 1;
+    if (x.experience.length) pos += 2; if (x.experience.length >= 2) pos += 1;
+    if (x.education.length) pos += 1;
+    if (x.dated >= 2) pos += 1;
+    let neg = 0, kind = '';
+    const per1k = 1000 / Math.max(200, x.words);
+    for (const [label, re] of NOT_CV) {
+      const n = (x.full.match(re) || []).length;
+      if (n >= 3 || n * per1k >= 4) { const w = Math.min(6, n); if (w > neg) { neg = w; kind = label; } }
+    }
+    if (x.words > 3500) { neg += 3; why.push('es muy largo para un CV (' + x.words + ' palabras)'); }
+    if (x.pages && x.pages > 6) { neg += 3; why.push('tiene ' + x.pages + ' páginas'); }
+    if (x.words < 60) why.push('casi no tiene texto');
+    if (!strong.length) why.push('no tiene secciones de CV (experiencia, formación, habilidades…)');
+    if (!x.email && !x.phone && !x.linkedin) why.push('no tiene datos de contacto');
+    if (kind) why.unshift('parece ' + kind);
+    const score = pos - neg;
+    // Menos de 5 puntos: no se parece a un CV. Un CV con texto (no escaneado) suele pasar de 9.
+    const verdict = x.words < 60 ? 'empty' : score >= 5 ? 'cv' : score >= 2 ? 'doubt' : 'not_cv';
+    return { verdict, score, positive: pos, negative: neg, kind, why };
+  }
+
   function analyze(input) {
     const text = input.text || '';
     const meta = Object.assign({ fileType: 'txt', fileName: '', pages: null, columns: false, tables: false, textBoxes: false, images: 0, photoLikely: false, fonts: 0, headerFooterContact: false, tinyText: 0, pageSize: null }, input.meta || {});
@@ -1074,8 +1113,10 @@
       driving
     };
 
+    const dated = (text.match(/\b(19|20)\d{2}\b/g) || []).length;
+    const doc = docCheck({ present, email, phone, linkedin, name, experience, education, words, pages: meta.pages, full: fullNorm, dated });
     return {
-      version: '1.0', lang, words, lines: lines.length, sectionsFound: present, sectionTitles: Object.fromEntries(Object.entries(bySec).filter(([k]) => k !== 'header').map(([k, v]) => [k, v.titles])),
+      version: '1.0', doc, lang, words, lines: lines.length, sectionsFound: present, sectionTitles: Object.fromEntries(Object.entries(bySec).filter(([k]) => k !== 'header').map(([k, v]) => [k, v.titles])),
       totalYears, mainFamily, familyLabel: famLabel || 'general', country: Object.assign({ code: opts.country }, country), company: Object.assign({ code: opts.company }, company),
       phoneDial: phoneDial || phoneLocalGuess, meta, data, checks, scores, scoreLabels: CAT, weights, total, strengths, weaknesses,
       remove, add, expand, templates: tplKeys, offer,

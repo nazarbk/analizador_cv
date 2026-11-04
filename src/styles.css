@@ -278,7 +278,7 @@ table.cmp tr.tot td { font-weight: 600; border-bottom: 2px solid var(--rule); }
 .toc a:hover { background: var(--field); color: var(--ink); }
 .toc a[aria-current="page"] { background: var(--field); color: var(--ink); font-weight: 600; border-left-color: var(--pen); box-shadow: var(--shadow); }
 .badge { font: 600 11.5px/1 var(--sans); font-variant-numeric: tabular-nums; padding: 4px 7px; border-radius: 10px; background: var(--field); color: var(--lila-ink); border: 1px solid var(--lila-line); white-space: nowrap; }
-.badge[hidden], .banner[hidden] { display: none; }
+.badge[hidden], .banner[hidden], .notcv[hidden] { display: none; }
 .badge.good { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .badge.mid { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
 .badge.low { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
@@ -461,3 +461,9 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
 .pro-reports li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--rule-2); }
 .pro-reports li:last-child { border-bottom: 0; }
 .pro-reports .linkbtn { font-weight: 600; text-align: left; }
+
+/* documento que no parece un CV */
+.notcv { margin-top: 12px; border: 1px solid var(--rule); border-left: 4px solid var(--warn); background: var(--sheet); border-radius: var(--r); padding: 12px 14px; }
+.notcv p { margin: 0 0 10px; font-size: 14px; }
+.notcv .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.banner.warn { border-left-color: var(--warn); }

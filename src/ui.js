@@ -92,6 +92,7 @@
 
   function render() {
     $('#sampleBanner').hidden = !state.sample;
+    $('#notCvBanner').hidden = state.sample || !state.r || !state.r.doc || !['not_cv', 'doubt'].includes(state.r.doc.verdict);
     renderScore(); renderResumen(); renderAts(); renderOfertas(); renderExp(); renderFormato(); renderCambios(); renderDatos(); renderPlantilla(); renderVersiones(); renderPro();
     renderNav(); renderDoc();
   }
@@ -697,7 +698,7 @@
       if (ev) Object.assign(d, { offer: $('#proOffer').value, lang: $('#proLang').value, c1, c2: cr ? d.c2 : c2 });   // solo lo que escribe la persona
       $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos): faltan unos ' + (150 - t.length) + ' caracteres.' : '';
       // explica qué falta, en lugar de dejar el botón desactivado sin más
-      const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? (cr ? 'Para continuar, marca la casilla.' : 'Para continuar, marca las dos casillas.') : '';
+      const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : state.r && state.r.doc && state.r.doc.verdict === 'not_cv' ? 'El documento analizado no parece un CV. Sube tu CV con «Subir CV» para generar el Informe Pro.' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? (cr ? 'Para continuar, marca la casilla.' : 'Para continuar, marca las dos casillas.') : '';
       $('#proWhy').textContent = why; btn.disabled = !!why;
     };
     $('#proLang').addEventListener('change', upd);
@@ -1000,10 +1001,38 @@
     node.nodeValue = '0'; requestAnimationFrame(tick);
   }
 
-  let queued = null;
+  let queued = null, notCvPending = null;
+  // Antes de analizar, comprueba que el documento parece un CV. Si no, pregunta en lugar de mostrar un informe sin sentido.
+  const notCvSignal = { notCv: true };
+  function cvGate(text, meta, label) {
+    const doc = E.analyze({ text, meta, opts: currentOpts() }).doc;
+    if (doc && (doc.verdict === 'not_cv' || doc.verdict === 'doubt')) { notCvPending = { text, meta, label, doc }; throw notCvSignal; }
+  }
+  function showNotCv() {
+    const p = notCvPending; if (!p) return;
+    const reasons = p.doc.why.filter(w => !/^parece /.test(w)).slice(0, 2);
+    const msg = p.doc.verdict === 'not_cv'
+      ? '«' + p.label + '» no parece un CV' + (p.doc.kind ? ': parece ' + p.doc.kind : '') + '. Sube tu currículum en PDF o Word para analizarlo.'
+      : 'No estamos seguros de que «' + p.label + '» sea un CV' + (reasons.length ? ': ' + reasons.join(' y ') : '') + '. Si es tu currículum, puedes analizarlo igualmente.';
+    $('#notCvMsg').textContent = msg;
+    $('#notCvBox').hidden = false; setStatus('');
+    const r = $('#notCvBox').getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) $('#notCvBox').scrollIntoView({ block: 'center' });
+  }
+  function hideNotCv() { notCvPending = null; $('#notCvBox').hidden = true; }
+  function applyDoc(text, meta, label) {
+    state.text = text; state.meta = meta; state.sample = false; state.label = label;
+    run(true); addVersion(label); go('resumen');
+  }
+  async function forceNotCv() {
+    const p = notCvPending; if (!p) return;
+    hideNotCv();
+    const ok = await withLoading(p.meta.fileType === 'txt' && !p.meta.fileName ? 'text' : 'file', p.label, 900, async () => { await frame(); applyDoc(p.text, p.meta, p.label); });
+    if (ok) setStatus('«' + p.label + '» analizado aunque no parece un CV.');
+  }
   async function handleFile(file) {
     if (!file) return;
     if (busy) { queued = file; return; }   // si llega otro archivo durante el análisis, se analiza al terminar
+    hideNotCv();
     if (file.size > 15 * 1024 * 1024) { setStatus('El archivo supera 15 MB. Un CV no debería pesar tanto: expórtalo de nuevo comprimiendo las imágenes.', 'err'); return; }
     setStatus('Leyendo «' + file.name + '»…', 'busy');
     let res;
@@ -1011,18 +1040,19 @@
       await withLoading('file', file.name, 1300, async step => {
         res = await window.CVExtract.fromFile(file);
         step(1); await frame();
-        state.text = res.text; state.meta = res.meta; state.sample = false; state.label = file.name;
-        run(true);
-        addVersion(file.name);
-        go('resumen');
+        cvGate(res.text, res.meta, file.name);
+        applyDoc(res.text, res.meta, file.name);
       });
       setStatus(res.text.trim().length < 300 ? '«' + file.name + '» leído, pero casi sin texto: revisa la sección «ATS e IA».' : '«' + file.name + '» analizado. El archivo no ha salido de tu navegador.', res.text.trim().length < 300 ? 'err' : '');
     } catch (e) {
-      console.error(e);
-      const msg = String(e && e.message || ''), nm = String(e && e.name || '');
-      setStatus(/password|contraseña/i.test(msg) || nm === 'PasswordException' ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.'
-        : /invalid pdf|InvalidPDF|bad xref|corrupt|end of central directory|zip/i.test(msg + ' ' + nm) ? 'El archivo está dañado o no es del tipo que indica su extensión. Expórtalo de nuevo desde tu editor (PDF o DOCX) o pega el texto.'
-        : msg && /[áéíóúñ]|^(El|La|No|Este|Ese)\b/.test(msg) ? msg : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.', 'err');
+      if (e === notCvSignal) showNotCv();
+      else {
+        console.error(e);
+        const msg = String(e && e.message || ''), nm = String(e && e.name || '');
+        setStatus(/password|contraseña/i.test(msg) || nm === 'PasswordException' ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.'
+          : /invalid pdf|InvalidPDF|bad xref|corrupt|end of central directory|zip/i.test(msg + ' ' + nm) ? 'El archivo está dañado o no es del tipo que indica su extensión. Expórtalo de nuevo desde tu editor (PDF o DOCX) o pega el texto.'
+          : msg && /[áéíóúñ]|^(El|La|No|Este|Ese)\b/.test(msg) ? msg : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.', 'err');
+      }
     }
     if (queued) { const q = queued; queued = null; handleFile(q); }
   }
@@ -1037,16 +1067,20 @@
     $('#analyzePasted').addEventListener('click', () => {
       const t = $('#pasted').value.trim();
       if (t.length < 50) { setStatus('Pega el texto completo del CV (al menos unas líneas).', 'err'); return; }
+      hideNotCv();
       withLoading('text', 'Texto pegado', 1000, async () => {
         await frame();
-        state.text = t; state.meta = { fileType: 'txt', fileName: '' }; state.sample = false; state.label = 'Texto pegado'; run(true); addVersion('Texto pegado'); go('resumen');
-      }).then(ok => { if (ok) setStatus('Texto analizado.'); });
+        const meta = { fileType: 'txt', fileName: '' };
+        cvGate(t, meta, 'Texto pegado');
+        applyDoc(t, meta, 'Texto pegado');
+      }).then(ok => { if (ok) setStatus('Texto analizado.'); }, e => { if (e === notCvSignal) showNotCv(); else console.error(e); });
     });
     $('#analyze').addEventListener('click', () => {
       const n = getOffers().length;
       withLoading('offers', n ? (n === 1 ? '1 oferta' : n + ' ofertas') : 'Sin ofertas pegadas', 800, async () => { await frame(); run(false); go(n > 1 ? 'ofertas' : 'resumen'); })
         .then(ok => { if (ok) toast('Análisis actualizado'); });
     });
+    $('#notCvForce').addEventListener('click', forceNotCv);
     $('#addOffer').addEventListener('click', () => { addOfferBox(''); const t = $$('#moreOffers textarea').pop(); if (t) t.focus(); });
     $('#offer').addEventListener('input', scheduleSave);
     initSave();
