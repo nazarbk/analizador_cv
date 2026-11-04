@@ -526,6 +526,7 @@
     pago_no_completado: 'El pago todavía no figura como completado. Espera unos segundos y pulsa «Reintentar».',
     pedido_caducado: 'Esta compra tiene más de 30 días y ya no permite generar informes.',
     limite_generaciones: 'Ya has usado los ' + PRO.max + ' informes incluidos en esta compra.',
+    pedido_reembolsado: 'Esta compra se ha devuelto, así que ya no permite generar informes. Los informes que ya generaste siguen aquí.',
     ia_saturada: 'El servicio de IA está saturado en este momento. No se ha gastado ningún informe: pulsa «Reintentar» en un minuto.',
     ia_no_disponible: 'No se ha podido generar el informe. No se ha gastado ningún informe: pulsa «Reintentar».',
     stripe_no_disponible: 'No se ha podido conectar con la pasarela de pago. Inténtalo de nuevo en un momento.',
@@ -560,7 +561,7 @@
     return w;
   }
   async function walletRefresh(only) {
-    const list = PRO.wallet.filter(w => (!only || w.id === only) && w.estado !== 'agotado' && w.estado !== 'caducado');
+    const list = PRO.wallet.filter(w => (!only || w.id === only) && w.estado !== 'agotado' && w.estado !== 'caducado' && w.estado !== 'reembolsado');
     await Promise.all(list.map(async w => {
       try {
         const r = await fetch('/api/estado?session_id=' + encodeURIComponent(w.id), { headers: { accept: 'application/json' } });
@@ -821,15 +822,16 @@
       PRO.err = e && e.message in PRO_ERR ? e.message : (e && e.name === 'TypeError' ? 'red' : 'ia_no_disponible');
       PRO.view = 'error';
       // si el pedido ya no sirve, se actualiza el monedero para no ofrecerlo otra vez
-      if (/limite_generaciones|pedido_caducado|pedido_no/.test(PRO.err)) await walletRefresh(job.session);
+      if (/limite_generaciones|pedido_caducado|pedido_reembolsado|pedido_no/.test(PRO.err)) await walletRefresh(job.session);
       renderPro(); renderNav();
     }
   }
   function renderProError(v) {
-    const job = PRO.job, retry = !/limite_generaciones|pedido_caducado|pedido_no/.test(PRO.err) && job;
+    const job = PRO.job, retry = !/limite_generaciones|pedido_caducado|pedido_reembolsado|pedido_no/.test(PRO.err) && job;
     v.innerHTML = '<div class="sheet"><h3>No se ha podido generar el informe</h3><p class="lede">' + h(PRO_ERR[PRO.err] || PRO_ERR.ia_no_disponible) + '</p>' +
       '<div class="toolbar">' + (retry ? '<button class="btn primary" type="button" id="proRetry">Reintentar</button>' : '') + '<button class="btn" type="button" id="proToForm">Volver</button><a class="btn" href="mailto:' + SUPPORT + '?subject=' + encodeURIComponent('Informe Pro · pedido ' + shortId(job && job.session)) + '">Escribir al soporte</a></div>' +
-      (job ? '<p class="small muted">Pedido ' + h(shortId(job.session)) + ' · CV: ' + h(job.cvName || '') + '</p>' : '') + '</div>';
+      (job ? '<p class="small muted">Pedido ' + h(shortId(job.session)) + ' · CV: ' + h(job.cvName || '') + '</p>' : '') + '</div>' + reportsList();
+    bindCommon(v);
     if ($('#proRetry')) $('#proRetry').addEventListener('click', () => proGenerate(job));
     $('#proToForm').addEventListener('click', () => { PRO.view = PRO.rep ? 'report' : 'form'; if (job) PRO.draft = { offer: job.offer, lang: job.lang, c1: true }; renderPro(); });
   }

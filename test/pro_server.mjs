@@ -8,6 +8,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = +(process.argv[2] || 8820), SITE = 'http://127.0.0.1:' + PORT;
 Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_mock', ANTHROPIC_API_KEY: 'sk-ant-mock', SITE_URL: SITE });
 const FAIL_FIRST = process.env.MOCK_FAIL_FIRST === '1';
+const NO_CHARGES = process.env.MOCK_NO_CHARGES === '1';
 const sessions = new Map(), log = [];
 let aiCalls = 0;
 const realFetch = globalThis.fetch;
@@ -49,7 +50,12 @@ globalThis.fetch = async (url, init = {}) => {
     if (init.method === 'POST' && p === '/checkout/sessions') { const id = 'cs_test_' + Math.random().toString(36).slice(2) + 'abcdefghij'; sessions.set(id, { paid: false, success: body.success_url, gen: 0, params: body }); return J({ id, url: SITE + '/__mock_checkout?session=' + id }); }
     let m;
     if ((m = p.match(/^\/checkout\/sessions\/(.+)$/))) { const s = sessions.get(decodeURIComponent(m[1])); if (!s) return J({ error: { message: 'No such session' } }, 404); return J({ id: m[1], payment_status: s.paid ? 'paid' : 'unpaid', status: s.paid ? 'complete' : 'open', metadata: { producto: s.params['metadata[producto]'] }, payment_intent: 'pi_' + m[1], created: Math.floor(Date.now() / 1000), customer_details: { email: 'test@example.com' } }); }
-    if ((m = p.match(/^\/payment_intents\/pi_(.+)$/))) { const s = sessions.get(decodeURIComponent(m[1])); if (init.method === 'POST') s.gen = +body['metadata[generaciones]']; return J({ id: 'pi_' + m[1], metadata: { generaciones: String(s.gen) } }); }
+    if ((m = p.match(/^\/payment_intents\/pi_([^?]+)(\?.*)?$/))) {
+      const s = sessions.get(decodeURIComponent(m[1])); if (init.method === 'POST') s.gen = +body['metadata[generaciones]'];
+      const pi = { id: 'pi_' + m[1], metadata: { generaciones: String(s.gen) }, latest_charge: 'ch_' + m[1] };
+      if (m[2] && /expand/.test(m[2])) { if (NO_CHARGES) return J({ error: { type: 'invalid_request_error', message: 'The provided key does not have the required permissions' } }, 403); pi.latest_charge = { id: 'ch_' + m[1], refunded: !!s.refunded, disputed: false }; }
+      return J(pi);
+    }
     return J({ error: { message: 'mock: ruta no simulada ' + p } }, 400);
   }
   if (url.startsWith('https://api.anthropic.com/')) {
@@ -66,6 +72,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 http.createServer(async (req, res) => {
   const u = new URL(req.url, SITE);
   if (u.pathname === '/__log') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ log, aiCalls, sessions: [...sessions].map(([k, v]) => ({ id: k, ...v })) })); return; }
+  if (u.pathname === '/__refund') { const s = sessions.get(u.searchParams.get('session')); if (s) s.refunded = true; res.end('ok'); return; }
   if (u.pathname === '/__mark_paid') { const s = sessions.get(u.searchParams.get('session')); if (s) s.paid = true; res.end('ok'); return; }
   if (u.pathname === '/__mock_checkout') { const s = sessions.get(u.searchParams.get('session')); s.paid = true; res.writeHead(302, { location: s.success.replace('{CHECKOUT_SESSION_ID}', u.searchParams.get('session')) }); res.end(); return; }
   if (fns[u.pathname]) {

@@ -43,6 +43,7 @@ PDF y Word se generan en el navegador
 - **Sin dependencias de npm.** Las funciones usan `fetch` contra las APIs REST de Stripe y Anthropic.
 - **Edge Functions** porque la generación tarda entre 30 y 60 segundos: en streaming no tienen límite de duración, siempre que empiecen a responder en menos de 40 segundos.
 - Si la IA falla o se corta la conexión, el intento **no se cuenta**. Solo se cuenta cuando el informe llega completo.
+- Si la compra se **devuelve** o entra en **disputa**, deja de dar informes (los ya generados siguen en el navegador de quien compró).
 - **Nada pagado se pierde en el navegador:** el monedero local (`pro-wallet`) guarda el código de cada compra y se sincroniza con Stripe (`/api/estado`). Cada informe guarda su propia copia del CV y de la oferta, así que se puede subir otro CV y usar los informes restantes con él; borrar un informe no borra la compra; si la pestaña se cierra justo después de pagar, la compra aparece al volver a entrar; y con el **enlace de la compra** (`/analizador.html?pro=<código>`) se usa en otro navegador.
 
 Archivos:
@@ -74,7 +75,7 @@ Site configuration → Environment variables:
 
 | Variable | Valor |
 |---|---|
-| `STRIPE_SECRET_KEY` | `sk_test_…` (luego `sk_live_…`) |
+| `STRIPE_SECRET_KEY` | mejor una clave **restringida** (`rk_test_…`, luego `rk_live_…`) con *Checkout Sessions: escritura*, *PaymentIntents: escritura* y *Charges: lectura* (sin este último todo funciona, pero una compra devuelta seguiría dando informes). Pon la de prueba en Deploy Previews y Branch deploys, y la real solo en Production. |
 | `STRIPE_PRICE_ID` | `price_…` del paso 3.2 (si no se indica, se usa 4,99 € definido en el código) |
 | `ANTHROPIC_API_KEY` | `sk-ant-…` |
 | `SITE_URL` | `https://analizadorcv.com` |
