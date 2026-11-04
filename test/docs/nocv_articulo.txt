@@ -1,0 +1,17 @@
+Variational quantum eigensolvers on noisy hardware: a benchmark study
+A. García, B. Smith, C. Liu
+Abstract
+Variational quantum eigensolvers (VQE) are among the most promising algorithms for near-term quantum devices. In this work we benchmark three ansatz families on superconducting hardware and analyse the effect of readout error mitigation. Our results show that hardware-efficient ansätze converge faster but are more sensitive to noise.
+Keywords: quantum computing, VQE, error mitigation, NISQ
+1. Introduction
+Quantum chemistry is a natural application of quantum computers [1]. Peruzzo et al. introduced the VQE algorithm in 2014 [2], and since then many variants have been proposed (see Table 1).
+2. Methodology
+We ran experiments on two 27-qubit devices between 2024 and 2025. Figure 1 shows the circuit layout. The energy was estimated with 8192 shots per term, and the optimiser was COBYLA with a maximum of 500 iterations.
+3. Results
+Figure 2 compares the energy error for H2, LiH and BeH2. Table 2 lists the number of CNOT gates per ansatz. Error mitigation reduced the error by 45 % on average.
+4. Conclusions
+Hardware-efficient ansätze offer the best trade-off on current devices, although chemically inspired ansätze remain more accurate in simulation.
+References
+[1] Cao, Y. et al. Quantum chemistry in the age of quantum computing. Chem. Rev. 119 (2019). doi:10.1021/acs.chemrev.8b00803
+[2] Peruzzo, A. et al. A variational eigenvalue solver on a photonic quantum processor. Nat. Commun. 5, 4213 (2014). doi:10.1038/ncomms5213
+[3] Kandala, A. et al. Hardware-efficient variational quantum eigensolver. Nature 549 (2017). doi:10.1038/nature23879

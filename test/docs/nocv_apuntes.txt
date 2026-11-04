@@ -1,0 +1,13 @@
+Tema 3. Circuitos cuánticos
+3.1 Puertas de un cúbit
+Una puerta cuántica es una transformación unitaria. Las más habituales son X, Y, Z y Hadamard. La puerta Hadamard crea superposición: aplicada a |0⟩ da (|0⟩ + |1⟩)/√2.
+Ejercicio 1. Calcula el resultado de aplicar H dos veces seguidas a |1⟩.
+3.2 Puertas de dos cúbits
+La puerta CNOT invierte el cúbit objetivo si el de control está en |1⟩. Combinada con Hadamard permite crear estados de Bell.
+Ejercicio 2. Escribe el circuito que prepara el estado de Bell |Φ+⟩.
+Tema 4. Medición
+4.1 Regla de Born
+La probabilidad de obtener un resultado es el cuadrado del módulo de su amplitud.
+Ejercicio 3. Calcula las probabilidades de medir 0 y 1 en el estado (√3/2)|0⟩ + (1/2)|1⟩.
+Capítulo siguiente: algoritmos de Deutsch–Jozsa y Grover.
+Índice de ejercicios al final del tema.

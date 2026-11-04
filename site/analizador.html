@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dXpnWQAAyZ8QV+VbAirUtDr7R2KBgh0UfIlk2MID/k8=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-Uc2qJSTH8/UklYppkuUhHnFF+titgVlFo+j9PV9ITp4=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-xXE6UR0b/7ksCEymxa8jk9jFNezQQw9wkBOSt7+qcu8='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dXpnWQAAyZ8QV+VbAirUtDr7R2KBgh0UfIlk2MID/k8=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-V06nvUNdDen7C+T0/SV/Jt4TpI81aA8buJu7clbST3Q=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-srt9o2P7M5OsAZQoxed1SzT3qFeCsAODP2IXfOj/wDM='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Analizador de CV · Análisis ATS en tu navegador</title>
 <meta name="description" content="Analiza gratis tu CV en el navegador, sin subirlo a ningún servidor: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y CV en PDF o Word.">
@@ -307,7 +307,7 @@ table.cmp tr.tot td { font-weight: 600; border-bottom: 2px solid var(--rule); }
 .toc a:hover { background: var(--field); color: var(--ink); }
 .toc a[aria-current="page"] { background: var(--field); color: var(--ink); font-weight: 600; border-left-color: var(--pen); box-shadow: var(--shadow); }
 .badge { font: 600 11.5px/1 var(--sans); font-variant-numeric: tabular-nums; padding: 4px 7px; border-radius: 10px; background: var(--field); color: var(--lila-ink); border: 1px solid var(--lila-line); white-space: nowrap; }
-.badge[hidden], .banner[hidden] { display: none; }
+.badge[hidden], .banner[hidden], .notcv[hidden] { display: none; }
 .badge.good { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 .badge.mid { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
 .badge.low { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
@@ -491,6 +491,12 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
 .pro-reports li:last-child { border-bottom: 0; }
 .pro-reports .linkbtn { font-weight: 600; text-align: left; }
 
+/* documento que no parece un CV */
+.notcv { margin-top: 12px; border: 1px solid var(--rule); border-left: 4px solid var(--warn); background: var(--sheet); border-radius: var(--r); padding: 12px 14px; }
+.notcv p { margin: 0 0 10px; font-size: 14px; }
+.notcv .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.banner.warn { border-left-color: var(--warn); }
+
 </style>
 </head>
 <body>
@@ -547,6 +553,10 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
         </label>
       </div>
       <div class="status" id="status" role="status" aria-live="polite"></div>
+      <div class="notcv" id="notCvBox" role="alert" hidden>
+        <p id="notCvMsg"></p>
+        <div class="toolbar"><label class="btn primary" for="file">Subir otro archivo</label><button class="btn" type="button" id="notCvForce">Es mi CV: analizarlo igualmente</button></div>
+      </div>
       <div class="docgrid">
         <div class="field">
           <label class="label" for="country">País de la oferta</label>
@@ -601,6 +611,7 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
       <p class="sr-only" id="anLive" role="status" aria-live="polite"></p>
     </div>
     <div class="banner restore" id="restoreBanner" hidden><span>Tienes un análisis guardado en este navegador (<span id="restoreDate"></span>).</span> <button class="btn small" id="restoreBtn" type="button">Recuperarlo</button> <button class="btn small" id="restoreDiscard" type="button">Borrarlo</button></div>
+    <div class="banner warn" id="notCvBanner" hidden>Este documento no parece un CV, así que algunos resultados pueden no tener sentido. Si te has equivocado de archivo, pulsa «Subir CV».</div>
     <div class="banner" id="sampleBanner">Estás viendo el análisis de un <strong>CV ficticio de ejemplo</strong>. Pulsa «Subir CV» para analizar el tuyo.</div>
     <div class="view" id="v-resumen"></div>
     <div class="view" id="v-ats" hidden></div>
@@ -1464,6 +1475,45 @@ window.CV_LIBS = {
   }
 
   // ---------- análisis principal ----------
+
+  // ¿Es un CV? Suma señales típicas de un currículum y resta las de otros documentos (facturas, contratos,
+  // artículos, cartas, ofertas de empleo…). No bloquea nada por sí sola: la interfaz pregunta antes de analizar.
+  const NOT_CV = [
+    ['una factura o un recibo', /\b(factura|invoice|base imponible|importe total|total a pagar|subtotal|n\.?\s?de factura|fecha de vencimiento|forma de pago|iban|receipt|amount due|vat number|ticket)\b/g],
+    ['un contrato o un documento legal', /\b(clausula|clausulas|las partes|en virtud de|contratante|arrendador|arrendatario|el presente contrato|reunidos|exponen|hereby|whereas|agreement|terms and conditions|jurisdiccion)\b/g],
+    ['un artículo o un trabajo académico', /\b(abstract|resumen ejecutivo|palabras clave|keywords|introduccion|metodologia|methodology|conclusiones|conclusions|bibliografia|references|et al|doi|figura \d|figure \d|tabla \d|table \d|hipotesis)\b/g],
+    ['una carta', /\b(estimado|estimada|estimados|atentamente|cordialmente|me dirijo|dear|sincerely|yours faithfully|kind regards|a quien corresponda)\b/g],
+    ['una oferta de empleo', /\b(buscamos|ofrecemos|se valorara|valorable|requisitos minimos|incorporacion inmediata|what we offer|we are looking for|you will|responsibilities|requirements|nice to have|salario|banda salarial|tipo de contrato|jornada completa)\b/g],
+    ['un temario, unos apuntes o un manual', /\b(tema \d+|capitulo \d+|chapter \d+|ejercicio \d+|exercise \d+|indice|leccion \d+|unidad \d+|apartado \d+)\b/g],
+    ['una receta o un menú', /\b(ingredientes|ingredients|preparacion|cucharada|gramos de|al horno|minutos a fuego|precalienta)\b/g]
+  ];
+  function docCheck(x) {
+    const why = [];
+    let pos = 0;
+    const strong = ['experience', 'education', 'skills', 'languages', 'summary', 'projects', 'certifications', 'courses'].filter(k => x.present.includes(k));
+    pos += Math.min(6, strong.length * 2);
+    if (x.email) pos += 2; if (x.phone) pos += 1; if (x.linkedin) pos += 2; if (x.name) pos += 1;
+    if (x.experience.length) pos += 2; if (x.experience.length >= 2) pos += 1;
+    if (x.education.length) pos += 1;
+    if (x.dated >= 2) pos += 1;
+    let neg = 0, kind = '';
+    const per1k = 1000 / Math.max(200, x.words);
+    for (const [label, re] of NOT_CV) {
+      const n = (x.full.match(re) || []).length;
+      if (n >= 3 || n * per1k >= 4) { const w = Math.min(6, n); if (w > neg) { neg = w; kind = label; } }
+    }
+    if (x.words > 3500) { neg += 3; why.push('es muy largo para un CV (' + x.words + ' palabras)'); }
+    if (x.pages && x.pages > 6) { neg += 3; why.push('tiene ' + x.pages + ' páginas'); }
+    if (x.words < 60) why.push('casi no tiene texto');
+    if (!strong.length) why.push('no tiene secciones de CV (experiencia, formación, habilidades…)');
+    if (!x.email && !x.phone && !x.linkedin) why.push('no tiene datos de contacto');
+    if (kind) why.unshift('parece ' + kind);
+    const score = pos - neg;
+    // Menos de 5 puntos: no se parece a un CV. Un CV con texto (no escaneado) suele pasar de 9.
+    const verdict = x.words < 60 ? 'empty' : score >= 5 ? 'cv' : score >= 2 ? 'doubt' : 'not_cv';
+    return { verdict, score, positive: pos, negative: neg, kind, why };
+  }
+
   function analyze(input) {
     const text = input.text || '';
     const meta = Object.assign({ fileType: 'txt', fileName: '', pages: null, columns: false, tables: false, textBoxes: false, images: 0, photoLikely: false, fonts: 0, headerFooterContact: false, tinyText: 0, pageSize: null }, input.meta || {});
@@ -1976,8 +2026,10 @@ window.CV_LIBS = {
       driving
     };
 
+    const dated = (text.match(/\b(19|20)\d{2}\b/g) || []).length;
+    const doc = docCheck({ present, email, phone, linkedin, name, experience, education, words, pages: meta.pages, full: fullNorm, dated });
     return {
-      version: '1.0', lang, words, lines: lines.length, sectionsFound: present, sectionTitles: Object.fromEntries(Object.entries(bySec).filter(([k]) => k !== 'header').map(([k, v]) => [k, v.titles])),
+      version: '1.0', doc, lang, words, lines: lines.length, sectionsFound: present, sectionTitles: Object.fromEntries(Object.entries(bySec).filter(([k]) => k !== 'header').map(([k, v]) => [k, v.titles])),
       totalYears, mainFamily, familyLabel: famLabel || 'general', country: Object.assign({ code: opts.country }, country), company: Object.assign({ code: opts.company }, company),
       phoneDial: phoneDial || phoneLocalGuess, meta, data, checks, scores, scoreLabels: CAT, weights, total, strengths, weaknesses,
       remove, add, expand, templates: tplKeys, offer,
@@ -2946,6 +2998,7 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
 
   function render() {
     $('#sampleBanner').hidden = !state.sample;
+    $('#notCvBanner').hidden = state.sample || !state.r || !state.r.doc || !['not_cv', 'doubt'].includes(state.r.doc.verdict);
     renderScore(); renderResumen(); renderAts(); renderOfertas(); renderExp(); renderFormato(); renderCambios(); renderDatos(); renderPlantilla(); renderVersiones(); renderPro();
     renderNav(); renderDoc();
   }
@@ -3551,7 +3604,7 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
       if (ev) Object.assign(d, { offer: $('#proOffer').value, lang: $('#proLang').value, c1, c2: cr ? d.c2 : c2 });   // solo lo que escribe la persona
       $('#proOfferHint').textContent = t.length && t.length < 150 ? 'Pega la oferta completa (título, funciones y requisitos): faltan unos ' + (150 - t.length) + ' caracteres.' : '';
       // explica qué falta, en lugar de dejar el botón desactivado sin más
-      const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? (cr ? 'Para continuar, marca la casilla.' : 'Para continuar, marca las dos casillas.') : '';
+      const why = state.sample ? 'Para continuar, sube primero tu CV con «Subir CV».' : state.r && state.r.doc && state.r.doc.verdict === 'not_cv' ? 'El documento analizado no parece un CV. Sube tu CV con «Subir CV» para generar el Informe Pro.' : !t ? 'Para continuar, pega la oferta de trabajo.' : t.length < 150 ? 'Para continuar, pega la oferta completa.' : !c1 || !c2 ? (cr ? 'Para continuar, marca la casilla.' : 'Para continuar, marca las dos casillas.') : '';
       $('#proWhy').textContent = why; btn.disabled = !!why;
     };
     $('#proLang').addEventListener('change', upd);
@@ -3854,10 +3907,38 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
     node.nodeValue = '0'; requestAnimationFrame(tick);
   }
 
-  let queued = null;
+  let queued = null, notCvPending = null;
+  // Antes de analizar, comprueba que el documento parece un CV. Si no, pregunta en lugar de mostrar un informe sin sentido.
+  const notCvSignal = { notCv: true };
+  function cvGate(text, meta, label) {
+    const doc = E.analyze({ text, meta, opts: currentOpts() }).doc;
+    if (doc && (doc.verdict === 'not_cv' || doc.verdict === 'doubt')) { notCvPending = { text, meta, label, doc }; throw notCvSignal; }
+  }
+  function showNotCv() {
+    const p = notCvPending; if (!p) return;
+    const reasons = p.doc.why.filter(w => !/^parece /.test(w)).slice(0, 2);
+    const msg = p.doc.verdict === 'not_cv'
+      ? '«' + p.label + '» no parece un CV' + (p.doc.kind ? ': parece ' + p.doc.kind : '') + '. Sube tu currículum en PDF o Word para analizarlo.'
+      : 'No estamos seguros de que «' + p.label + '» sea un CV' + (reasons.length ? ': ' + reasons.join(' y ') : '') + '. Si es tu currículum, puedes analizarlo igualmente.';
+    $('#notCvMsg').textContent = msg;
+    $('#notCvBox').hidden = false; setStatus('');
+    const r = $('#notCvBox').getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) $('#notCvBox').scrollIntoView({ block: 'center' });
+  }
+  function hideNotCv() { notCvPending = null; $('#notCvBox').hidden = true; }
+  function applyDoc(text, meta, label) {
+    state.text = text; state.meta = meta; state.sample = false; state.label = label;
+    run(true); addVersion(label); go('resumen');
+  }
+  async function forceNotCv() {
+    const p = notCvPending; if (!p) return;
+    hideNotCv();
+    const ok = await withLoading(p.meta.fileType === 'txt' && !p.meta.fileName ? 'text' : 'file', p.label, 900, async () => { await frame(); applyDoc(p.text, p.meta, p.label); });
+    if (ok) setStatus('«' + p.label + '» analizado aunque no parece un CV.');
+  }
   async function handleFile(file) {
     if (!file) return;
     if (busy) { queued = file; return; }   // si llega otro archivo durante el análisis, se analiza al terminar
+    hideNotCv();
     if (file.size > 15 * 1024 * 1024) { setStatus('El archivo supera 15 MB. Un CV no debería pesar tanto: expórtalo de nuevo comprimiendo las imágenes.', 'err'); return; }
     setStatus('Leyendo «' + file.name + '»…', 'busy');
     let res;
@@ -3865,18 +3946,19 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
       await withLoading('file', file.name, 1300, async step => {
         res = await window.CVExtract.fromFile(file);
         step(1); await frame();
-        state.text = res.text; state.meta = res.meta; state.sample = false; state.label = file.name;
-        run(true);
-        addVersion(file.name);
-        go('resumen');
+        cvGate(res.text, res.meta, file.name);
+        applyDoc(res.text, res.meta, file.name);
       });
       setStatus(res.text.trim().length < 300 ? '«' + file.name + '» leído, pero casi sin texto: revisa la sección «ATS e IA».' : '«' + file.name + '» analizado. El archivo no ha salido de tu navegador.', res.text.trim().length < 300 ? 'err' : '');
     } catch (e) {
-      console.error(e);
-      const msg = String(e && e.message || ''), nm = String(e && e.name || '');
-      setStatus(/password|contraseña/i.test(msg) || nm === 'PasswordException' ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.'
-        : /invalid pdf|InvalidPDF|bad xref|corrupt|end of central directory|zip/i.test(msg + ' ' + nm) ? 'El archivo está dañado o no es del tipo que indica su extensión. Expórtalo de nuevo desde tu editor (PDF o DOCX) o pega el texto.'
-        : msg && /[áéíóúñ]|^(El|La|No|Este|Ese)\b/.test(msg) ? msg : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.', 'err');
+      if (e === notCvSignal) showNotCv();
+      else {
+        console.error(e);
+        const msg = String(e && e.message || ''), nm = String(e && e.name || '');
+        setStatus(/password|contraseña/i.test(msg) || nm === 'PasswordException' ? 'El PDF está protegido con contraseña. Quita la protección y súbelo de nuevo.'
+          : /invalid pdf|InvalidPDF|bad xref|corrupt|end of central directory|zip/i.test(msg + ' ' + nm) ? 'El archivo está dañado o no es del tipo que indica su extensión. Expórtalo de nuevo desde tu editor (PDF o DOCX) o pega el texto.'
+          : msg && /[áéíóúñ]|^(El|La|No|Este|Ese)\b/.test(msg) ? msg : 'No se ha podido leer el archivo. Prueba a exportarlo de nuevo como PDF o DOCX, o pega el texto.', 'err');
+      }
     }
     if (queued) { const q = queued; queued = null; handleFile(q); }
   }
@@ -3891,16 +3973,20 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
     $('#analyzePasted').addEventListener('click', () => {
       const t = $('#pasted').value.trim();
       if (t.length < 50) { setStatus('Pega el texto completo del CV (al menos unas líneas).', 'err'); return; }
+      hideNotCv();
       withLoading('text', 'Texto pegado', 1000, async () => {
         await frame();
-        state.text = t; state.meta = { fileType: 'txt', fileName: '' }; state.sample = false; state.label = 'Texto pegado'; run(true); addVersion('Texto pegado'); go('resumen');
-      }).then(ok => { if (ok) setStatus('Texto analizado.'); });
+        const meta = { fileType: 'txt', fileName: '' };
+        cvGate(t, meta, 'Texto pegado');
+        applyDoc(t, meta, 'Texto pegado');
+      }).then(ok => { if (ok) setStatus('Texto analizado.'); }, e => { if (e === notCvSignal) showNotCv(); else console.error(e); });
     });
     $('#analyze').addEventListener('click', () => {
       const n = getOffers().length;
       withLoading('offers', n ? (n === 1 ? '1 oferta' : n + ' ofertas') : 'Sin ofertas pegadas', 800, async () => { await frame(); run(false); go(n > 1 ? 'ofertas' : 'resumen'); })
         .then(ok => { if (ok) toast('Análisis actualizado'); });
     });
+    $('#notCvForce').addEventListener('click', forceNotCv);
     $('#addOffer').addEventListener('click', () => { addOfferBox(''); const t = $$('#moreOffers textarea').pop(); if (t) t.focus(); });
     $('#offer').addEventListener('input', scheduleSave);
     initSave();

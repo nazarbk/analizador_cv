@@ -1,0 +1,17 @@
+Backend Developer (Python) — Acme Data, Madrid (híbrido)
+¿Quiénes somos? Acme Data es una empresa de analítica con más de 200 clientes en Europa.
+Buscamos una persona para diseñar y mantener APIs en Python y servicios en AWS.
+Funciones
+- Desarrollar y mantener servicios backend en Python.
+- Participar en revisiones de código y pruebas automatizadas.
+- Colaborar con el equipo de producto en un entorno ágil.
+Requisitos mínimos
+- 3 años de experiencia con Python, AWS, SQL y Docker.
+- Inglés B2.
+Se valorará
+- Experiencia con Kubernetes y Terraform.
+Ofrecemos
+- Contrato indefinido, jornada completa y horario flexible.
+- Banda salarial: 40.000–48.000 € brutos anuales.
+- Incorporación inmediata y 2 días de teletrabajo a la semana.
+Si te interesa, envía tu CV a talento@acmedata.es.

@@ -1,0 +1,15 @@
+FACTURA N.º 2026-0147
+Fecha de emisión: 12/10/2026   Fecha de vencimiento: 12/11/2026
+Emisor: Reformas Levante S.L. · CIF B12345678 · C/ Mayor 12, 03001 Alicante · info@reformaslevante.es · 965 123 456
+Cliente: Juan Pérez García · NIF 12345678A · Av. del Mar 4, 03560 El Campello
+
+Concepto                          Cantidad   Precio unitario   Importe
+Pintura de salón (m²)             45         8,50 €            382,50 €
+Sustitución de grifería           2          65,00 €           130,00 €
+Mano de obra (horas)              12         25,00 €           300,00 €
+
+Base imponible: 812,50 €
+IVA (21 %): 170,63 €
+Importe total: 983,13 €
+Forma de pago: transferencia bancaria a IBAN ES12 3456 7890 1234 5678 9012
+Gracias por confiar en nosotros. Total a pagar antes de la fecha de vencimiento.

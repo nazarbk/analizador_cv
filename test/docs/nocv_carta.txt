@@ -1,0 +1,17 @@
+Nazaret Ruiz Molina
+nazaret.ruiz@email.com · 600 123 456 · Valencia
+
+Valencia, 3 de noviembre de 2026
+
+Estimado equipo de selección de Acme Data:
+
+Me dirijo a ustedes para presentar mi candidatura al puesto de Desarrolladora Backend publicado en LinkedIn. Durante los últimos cuatro años he trabajado con Python, AWS y Docker en proyectos de datos para clientes del sector financiero, y creo que mi experiencia encaja con lo que buscan.
+
+En mi puesto actual en Datalia lidero la migración de nuestros servicios a AWS, lo que ha reducido los costes de infraestructura un 30 %. Antes, en Softgest, desarrollé APIs REST que hoy usan más de 200 empresas.
+
+Me motiva especialmente su apuesta por la calidad del código y las revisiones entre compañeros, algo que considero fundamental en un equipo ágil.
+
+Quedo a su disposición para ampliar cualquier información en una entrevista.
+
+Atentamente,
+Nazaret Ruiz Molina
