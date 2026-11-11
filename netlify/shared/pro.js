@@ -18,10 +18,11 @@ export const json = (data, status = 200) => new Response(JSON.stringify(data), {
 function stripeHeaders() {
   return { Authorization: 'Bearer ' + env('STRIPE_SECRET_KEY'), 'Content-Type': 'application/x-www-form-urlencoded', 'Stripe-Version': env('STRIPE_API_VERSION', '2026-04-22.dahlia') };
 }
-export async function stripe(method, path, params) {
-  const r = await fetch(STRIPE_API + path, { method, headers: stripeHeaders(), body: params ? new URLSearchParams(params).toString() : undefined });
+export async function stripe(method, path, params, idempotencyKey) {
+  const headers = stripeHeaders(); if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const r = await fetch(STRIPE_API + path, { method, headers, body: params ? new URLSearchParams(params).toString() : undefined });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = new Error((d.error && d.error.message) || 'Error de Stripe ' + r.status); e.status = r.status; throw e; }
+  if (!r.ok) { const e = new Error((d.error && d.error.message) || 'Error de Stripe ' + r.status); e.status = r.status; e.type = d.error && d.error.type; throw e; }
   return d;
 }
 export function checkoutParams(site) {
@@ -46,7 +47,32 @@ export function checkoutParams(site) {
   if (env('STRIPE_MANAGED_PAYMENTS', 'true') !== 'false') p['managed_payments[enabled]'] = 'true';
   return p;
 }
-// Comprueba que la sesión de pago está pagada, es de este producto y no ha agotado sus generaciones.
+// ---------- Contador de informes por compra ----------
+// Sin base de datos: el estado vive en los metadatos del pago (PaymentIntent) en Stripe.
+//   generaciones = informes completados · reservas = informes en curso («token:segundos,…») · intentos = versión
+// Cada cambio se escribe con la clave de idempotencia «ipro_<pago>_<versión+1>». Stripe rechaza la misma clave con
+// otros parámetros (o en curso a la vez), así que si dos peticiones leen la misma versión solo una escribe y la otra
+// vuelve a leer: es una escritura condicional («compare-and-set») que evita contar dos veces el mismo hueco.
+export const RESERVA_SEG = 15 * 60;   // una reserva sin cerrar (función cortada) deja de contar a los 15 minutos
+function parseReservas(str, now) {
+  return String(str || '').split(',').filter(Boolean).map(x => { const [t, ts] = x.split(':'); return { t, ts: +ts || 0 }; })
+    .filter(r => r.t && now - r.ts < RESERVA_SEG);
+}
+const fmtReservas = list => list.map(r => r.t + ':' + r.ts).join(',');
+export function counterState(pi, now = Math.floor(Date.now() / 1000)) {
+  const md = (pi && pi.metadata) || {};
+  const used = parseInt(md.generaciones || '0', 10) || 0;
+  return { used, version: parseInt(md.intentos || md.generaciones || '0', 10) || 0, reservas: parseReservas(md.reservas, now) };
+}
+// Lee el pago con su cargo (para saber si se ha devuelto). Si la clave restringida no tiene el permiso
+// «Charges: lectura», lo lee sin el cargo: nunca bloquea una compra válida por falta de ese permiso.
+async function readPaymentIntent(piId, withCharge = true) {
+  const base = '/payment_intents/' + encodeURIComponent(piId);
+  if (!withCharge) return stripe('GET', base);
+  try { return await stripe('GET', base + '?expand%5B%5D=latest_charge'); }
+  catch (e) { if (e.status === 403 || e.status === 400) return await stripe('GET', base); throw e; }
+}
+// Comprueba que la sesión de pago está pagada, es de este producto y le quedan informes.
 export async function verifyPurchase(sessionId) {
   if (!/^cs_(test|live)_[A-Za-z0-9]{10,200}$/.test(String(sessionId || ''))) return { ok: false, status: 400, error: 'pedido_no_valido' };
   let s;
@@ -56,29 +82,60 @@ export async function verifyPurchase(sessionId) {
   const caduca = s.created ? (s.created + VALID_DAYS * 86400) * 1000 : null;
   if (caduca && Date.now() > caduca) return { ok: false, status: 410, error: 'pedido_caducado', caduca };
   const piId = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent && s.payment_intent.id;
-  let used = 0;
+  let st = { used: 0, version: 0, reservas: [] };
   if (piId) {
     let pi;
     try { pi = await readPaymentIntent(piId); }
     catch (e) { return { ok: false, status: 502, error: 'stripe_no_disponible', caduca }; }
-    used = parseInt((pi.metadata || {}).generaciones || '0', 10) || 0;
+    st = counterState(pi);
     // Una compra devuelta o en disputa deja de dar informes.
     const ch = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
-    if (ch && (ch.refunded || ch.disputed)) return { ok: false, status: 402, error: 'pedido_reembolsado', used, caduca };
+    if (ch && (ch.refunded || ch.disputed)) return { ok: false, status: 402, error: 'pedido_reembolsado', used: st.used, caduca };
   }
-  if (used >= MAX_GENERATIONS) return { ok: false, status: 429, error: 'limite_generaciones', used, caduca };
-  return { ok: true, piId, used, caduca, email: s.customer_details && s.customer_details.email };
+  const enCurso = st.reservas.length;
+  if (st.used >= MAX_GENERATIONS) return { ok: false, status: 429, error: 'limite_generaciones', used: st.used, caduca };
+  if (st.used + enCurso >= MAX_GENERATIONS) return { ok: false, status: 409, error: 'generacion_en_curso', used: st.used, enCurso, caduca };
+  return { ok: true, piId, used: st.used, enCurso, restantes: MAX_GENERATIONS - st.used - enCurso, state: st, caduca, email: s.customer_details && s.customer_details.email };
 }
-// Lee el pago con su cargo (para saber si se ha devuelto). Si la clave restringida no tiene el permiso
-// «Charges: lectura», lo lee sin el cargo: nunca bloquea una compra válida por falta de ese permiso.
-async function readPaymentIntent(piId) {
-  const base = '/payment_intents/' + encodeURIComponent(piId);
-  try { return await stripe('GET', base + '?expand%5B%5D=latest_charge'); }
-  catch (e) { if (e.status === 403 || e.status === 400) return await stripe('GET', base); throw e; }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Aplica un cambio al contador con escritura condicional. change(state) devuelve los metadatos nuevos, o lanza un
+// error con .code para abortar (por ejemplo, si ya no quedan informes). Reintenta si otra petición escribió antes.
+async function updateCounter(piId, change, first) {
+  let st = first;
+  for (let i = 0; i < 6; i++) {
+    if (!st) st = counterState(await readPaymentIntent(piId, false));
+    const next = change(st), version = st.version + 1;
+    const params = { 'metadata[intentos]': String(version), 'metadata[generaciones]': String(next.used), 'metadata[reservas]': fmtReservas(next.reservas) };
+    const key = 'ipro_' + piId + '_' + version;
+    for (let n = 0; n < 2; n++) {           // un fallo de red se reintenta con la misma clave y los mismos datos
+      try { await stripe('POST', '/payment_intents/' + encodeURIComponent(piId), params, key); return next; }
+      catch (e) {
+        if (e.type === 'idempotency_error' || e.status === 409) break;   // otra petición usó esta versión: releer
+        if (n === 1 || (e.status && e.status < 500)) throw e;
+        await sleep(300);
+      }
+    }
+    st = null; await sleep(120 + Math.random() * 280);
+  }
+  throw Object.assign(new Error('contador_ocupado'), { code: 'contador_ocupado' });
 }
-export async function countGeneration(piId, used) {
-  if (!piId) return;
-  await stripe('POST', '/payment_intents/' + encodeURIComponent(piId), { 'metadata[generaciones]': String(used + 1) });
+// Reserva un informe antes de llamar a la IA. Devuelve el token de la reserva.
+export async function reserveGeneration(v) {
+  const token = Math.random().toString(36).slice(2, 10), now = Math.floor(Date.now() / 1000);
+  await updateCounter(v.piId, st => {
+    if (st.used >= MAX_GENERATIONS) throw Object.assign(new Error('limite'), { code: 'limite_generaciones' });
+    if (st.used + st.reservas.length >= MAX_GENERATIONS) throw Object.assign(new Error('en curso'), { code: 'generacion_en_curso' });
+    return { used: st.used, reservas: st.reservas.concat([{ t: token, ts: now }]) };
+  }, v.state);
+  return token;
+}
+// El informe ha llegado completo: cuenta la generación y cierra la reserva.
+export async function completeGeneration(piId, token) {
+  return updateCounter(piId, st => ({ used: st.used + 1, reservas: st.reservas.filter(r => r.t !== token) }));
+}
+// La IA ha fallado o se ha cortado: devuelve el hueco reservado.
+export async function releaseGeneration(piId, token) {
+  return updateCounter(piId, st => ({ used: st.used, reservas: st.reservas.filter(r => r.t !== token) }));
 }
 
 // ---------- Claude ----------

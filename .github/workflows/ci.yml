@@ -1,0 +1,47 @@
+# Compila desde cero y ejecuta toda la batería de pruebas (motor, contador del Informe Pro y navegador con Playwright)
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar librerías (versiones fijadas en package-lock.json)
+        run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Instalar dependencias de pruebas
+        run: |
+          pip install -r requirements-dev.txt
+          python -m playwright install --with-deps chromium
+      - name: Compilar
+        run: python3 build.py
+      - name: Comprobar que site/ está actualizado
+        run: |
+          git diff --stat --exit-code -- site ':(exclude)site/sitemap.xml' || (echo "::error::site/ no coincide con el código: ejecuta python3 build.py y súbelo"; exit 1)
+      - name: Pruebas
+        env:
+          CV_TEST_OUT: ${{ runner.temp }}/capturas
+        run: |
+          mkdir -p "$CV_TEST_OUT"
+          python3 scripts/test_all.py
+      - name: Capturas de las pruebas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: ${{ runner.temp }}/capturas

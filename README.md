@@ -52,11 +52,11 @@ El análisis es gratuito y se hace en el navegador. El **Informe Pro (4,99 €)*
 
 ## Desarrollo
 
-1. Instala las librerías: `npm install`
+1. Instala las librerías con las versiones fijadas: `npm ci`
 2. Edita lo que necesites en `src/`.
 3. Genera la web: `python3 build.py` (actualiza `site/`).
 4. Pruébala en local: `cd site && python3 -m http.server 8080` y abre http://localhost:8080. No funciona abriendo `index.html` con doble clic, porque los módulos y el worker de pdf.js necesitan un servidor.
-5. Pruebas: `node test/fuzz.js`. Las pruebas de navegador (`test/e2e*.py`) usan Playwright para Python.
+5. Pruebas: `pip install -r requirements-dev.txt`, `python -m playwright install chromium` y `python3 scripts/test_all.py` (motor, contador del Informe Pro y navegador). GitHub Actions las ejecuta en cada PR y en cada cambio de `main` (`.github/workflows/ci.yml`).
 
 Sube a GitHub también la carpeta `site/` regenerada: Netlify la publica tal cual.
 
