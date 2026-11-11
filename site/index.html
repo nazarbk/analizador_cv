@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XEQ6jR2YIN7ap5ARSdHTzQ4P3Pg/HwZnBi+NuQQOHu4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-4nFGGg5blySnWQypN5JQe8TTARBpEcf4hoLpPf5kpRo='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Analizador de CV gratis: comprueba tu CV para los filtros ATS</title>
 <meta name="description" content="Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.">
@@ -444,15 +444,18 @@ a { color: var(--pen); }
   function say(msg, err) { status.textContent = msg; status.className = 'lp-status' + (err ? ' err' : ''); }
   function store(file) {
     return new Promise(function (resolve, reject) {
+      setTimeout(function () { reject(new Error('timeout')); }, 5000);   // algunos navegadores en modo privado no responden
       try {
         var req = indexedDB.open('cv-handoff', 1);
         req.onupgradeneeded = function () { req.result.createObjectStore('f'); };
         req.onerror = function () { reject(req.error); };
         req.onsuccess = function () {
-          var db = req.result, tx = db.transaction('f', 'readwrite');
-          tx.objectStore('f').put({ blob: file, name: file.name, type: file.type, at: Date.now() }, 'pending');
-          tx.oncomplete = function () { db.close(); resolve(); };
-          tx.onerror = tx.onabort = function () { db.close(); reject(tx.error); };
+          try {
+            var db = req.result, tx = db.transaction('f', 'readwrite');
+            tx.objectStore('f').put({ blob: file, name: file.name, type: file.type, at: Date.now() }, 'pending');
+            tx.oncomplete = function () { db.close(); resolve(); };
+            tx.onerror = tx.onabort = function () { db.close(); reject(tx.error); };
+          } catch (e) { reject(e); }
         };
       } catch (e) { reject(e); }
     });

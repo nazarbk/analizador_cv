@@ -530,25 +530,40 @@
     pedido_reembolsado: 'Esta compra se ha devuelto, así que ya no permite generar informes. Los informes que ya generaste siguen aquí.',
     ia_saturada: 'El servicio de IA está saturado en este momento. No se ha gastado ningún informe: pulsa «Reintentar» en un minuto.',
     ia_no_disponible: 'No se ha podido generar el informe. No se ha gastado ningún informe: pulsa «Reintentar».',
-    stripe_no_disponible: 'No se ha podido conectar con la pasarela de pago. Inténtalo de nuevo en un momento.',
+    stripe_no_disponible: 'No se ha podido conectar con la pasarela de pago. No se ha gastado ningún informe: inténtalo de nuevo en un momento.',
+    generacion_en_curso: 'Ya se está generando otro informe con esta compra (quizá en otra pestaña). Espera a que termine y pulsa «Reintentar»; no se ha gastado ningún informe.',
     pagos_no_configurados: 'El Informe Pro no está activo todavía.',
     oferta_muy_corta: 'Pega la oferta completa: título, funciones y requisitos.',
     oferta_muy_larga: 'La oferta es demasiado larga. Pega solo el título, las funciones y los requisitos.',
     cv_muy_largo: 'El CV es demasiado largo para generar el informe. Recorta las descripciones más antiguas en «Datos para copiar».',
     red: 'Se ha perdido la conexión mientras se generaba el informe. Si no llegó a terminar, no se ha gastado: pulsa «Reintentar».'
   };
-  // almacenamiento local del navegador (la misma base de datos que usa la página principal)
+  // almacenamiento local del navegador (la misma base de datos que usa la página principal).
+  // Si el navegador lo bloquea (modo privado, permisos) o no responde, se sigue en memoria durante la visita:
+  // nada se rompe, solo se pierde al recargar. IDB_OK dice si funciona (lo comprueba proInit).
+  const MEM = new Map(); let IDB_OK = null;
   function idb(mode, fn) {
+    if (IDB_OK === false) return Promise.reject(new Error('idb_no_disponible'));   // ya sabemos que no funciona: no se espera otra vez
     return new Promise((resolve, reject) => {
-      let req; try { req = indexedDB.open('cv-handoff', 1); } catch (e) { reject(e); return; }
-      req.onupgradeneeded = () => req.result.createObjectStore('f');
-      req.onerror = () => reject(req.error);
-      req.onsuccess = () => { const db = req.result, tx = db.transaction('f', mode), out = fn(tx.objectStore('f')); tx.oncomplete = () => { db.close(); resolve(out && 'result' in out ? out.result : undefined); }; tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); }; };
+      let done = false; const end = (f, v) => { if (!done) { done = true; clearTimeout(timer); if (f === reject) IDB_OK = false; f(v); } };
+      const timer = setTimeout(() => end(reject, new Error('idb_timeout')), 5000);
+      let req; try { req = indexedDB.open('cv-handoff', 1); } catch (e) { end(reject, e); return; }
+      req.onupgradeneeded = () => { try { req.result.createObjectStore('f'); } catch (e) { } };
+      req.onerror = () => end(reject, req.error);
+      req.onblocked = () => end(reject, new Error('idb_blocked'));
+      req.onsuccess = () => {
+        try {
+          const db = req.result, tx = db.transaction('f', mode), out = fn(tx.objectStore('f'));
+          tx.oncomplete = () => { db.close(); end(resolve, out && 'result' in out ? out.result : undefined); };
+          tx.onerror = tx.onabort = () => { db.close(); end(reject, tx.error); };
+        } catch (e) { try { req.result.close(); } catch (x) { } end(reject, e); }
+      };
     });
   }
-  const idbGet = k => idb('readonly', st => st.get(k)).catch(() => null);
-  const idbSet = (k, v) => idb('readwrite', st => { st.put(v, k); }).catch(() => null);
-  const idbDel = k => idb('readwrite', st => { st.delete(k); }).catch(() => null);
+  const idbGet = k => idb('readonly', st => st.get(k)).then(v => v === undefined && MEM.has(k) ? MEM.get(k) : v, () => MEM.has(k) ? MEM.get(k) : null);
+  const idbSet = (k, v) => { MEM.set(k, v); return idb('readwrite', st => { st.put(v, k); }).then(() => { MEM.delete(k); return true; }, () => false); };
+  const idbDel = k => { MEM.delete(k); return idb('readwrite', st => { st.delete(k); }).catch(() => null); };
+  async function idbProbe() { if (IDB_OK === null) { IDB_OK = await idbSet('probe', 1); if (IDB_OK) await idbDel('probe'); } return IDB_OK; }
 
   // ---------- compras (monedero local, sincronizado con Stripe) ----------
   const shortId = id => '…' + String(id || '').slice(-8);
@@ -689,6 +704,7 @@
       (cr ? '' : '<label class="toggle consent"><input type="checkbox" id="proC2"' + (d.c2 ? ' checked' : '') + '> <span>Quiero recibir el informe en cuanto pague y acepto que, una vez generado, pierdo el derecho de desistimiento. <a href="condiciones.html" target="_blank" rel="noopener">Condiciones de venta</a></span></label>') +
       '<div class="toolbar">' + (cr ? '<button class="btn primary" type="button" id="proUse" disabled>Generar el informe (usa 1 de ' + left + ')</button><span class="small muted">Ya está pagado: no se te cobrará nada.</span>'
         : '<button class="btn primary" type="button" id="proPay" disabled>Pagar ' + PRO.price + ' y generar el informe</button><span class="small muted">Pago seguro con Stripe · IVA incluido · ' + PRO.max + ' informes durante 30 días</span>') + '</div>' +
+      (IDB_OK === false && !cr ? '<p class="small notice-storage">Tu navegador no deja guardar datos de esta web (modo privado o almacenamiento bloqueado). Puedes comprar igual, pero al volver del pago tendrás que subir de nuevo el CV y pegar la oferta, y si cierras la pestaña perderás el acceso: guarda el «enlace de la compra» que aparecerá.</p>' : '') +
       '<p class="small pro-why" id="proWhy" aria-live="polite"></p><p class="small" id="proMsg" role="status"></p>' +
       (cr ? '<p class="small muted">¿Quieres más informes? <button class="linkbtn" type="button" id="proBuyMore">Comprar otra compra de ' + PRO.max + ' (' + PRO.price + ')</button></p>' : '') + '</div>' +
       (PRO.rep ? '<p class="small"><button class="linkbtn" type="button" id="proBack">← Volver al último informe</button></p>' : '') + reportsList();
@@ -919,8 +935,9 @@
       const d = r.ok ? await r.json() : null;
       PRO.available = !!(d && d.disponible);
     } catch (e) { PRO.available = false; }
-    const navA = $('#tabs a[data-view="pro"]'); if (navA) navA.hidden = !PRO.available;
-    if (!PRO.available) { badge('pro', null); return; }
+    if (!PRO.available) { const navA = $('#tabs a[data-view="pro"]'); if (navA) navA.hidden = true; badge('pro', null); return; }
+    await idbProbe();
+    const navA = $('#tabs a[data-view="pro"]'); if (navA) navA.hidden = false;
     PRO.wallet = (await idbGet('pro-wallet')) || [];
     await proMigrate(); await reportsLoad();
     const cur = await idbGet('pro-current'), rep = cur && await idbGet('pro-report:' + cur);
@@ -1117,7 +1134,10 @@
     req.onupgradeneeded = () => req.result.createObjectStore('f');
     req.onerror = () => { if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err'); };
     req.onsuccess = () => {
-      const db = req.result, tx = db.transaction('f', 'readwrite'), st = tx.objectStore('f'), g = st.get('pending');
+      let db, tx, st, g;
+      try { db = req.result; tx = db.transaction('f', 'readwrite'); st = tx.objectStore('f'); g = st.get('pending'); }
+      catch (e) { try { db && db.close(); } catch (x) { } if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err'); return; }
+      g.onerror = () => { if (fromHome) setStatus('No se ha podido recibir el archivo. Súbelo aquí con «Subir CV».', 'err'); };
       g.onsuccess = () => {
         const rec = g.result; st.delete('pending');
         tx.oncomplete = () => db.close();
@@ -1243,7 +1263,10 @@
     const st = () => { $('#saveState').textContent = cb.checked ? '· activado' : '· desactivado'; };
     st(); cb.addEventListener('change', st);
     cb.addEventListener('change', () => {
-      if (cb.checked) { store.set('save', '1'); if (state.sample) $('#saveStatus').textContent = 'Se guardará cuando subas tu CV.'; else saveNow(); }
+      if (cb.checked) {
+        if (!store.set('save', '1')) { cb.checked = false; st(); $('#saveStatus').textContent = 'Tu navegador no deja guardar datos de esta web (modo privado o almacenamiento bloqueado). El análisis funciona igual, pero no se guardará al cerrar.'; return; }
+        if (state.sample) $('#saveStatus').textContent = 'Se guardará cuando subas tu CV.'; else saveNow();
+      }
       else { store.del('save'); clearSaved('Guardado desactivado y datos borrados'); }
     });
     $('#clearLocal').addEventListener('click', () => clearSaved());

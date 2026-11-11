@@ -7,15 +7,18 @@
   function say(msg, err) { status.textContent = msg; status.className = 'lp-status' + (err ? ' err' : ''); }
   function store(file) {
     return new Promise(function (resolve, reject) {
+      setTimeout(function () { reject(new Error('timeout')); }, 5000);   // algunos navegadores en modo privado no responden
       try {
         var req = indexedDB.open('cv-handoff', 1);
         req.onupgradeneeded = function () { req.result.createObjectStore('f'); };
         req.onerror = function () { reject(req.error); };
         req.onsuccess = function () {
-          var db = req.result, tx = db.transaction('f', 'readwrite');
-          tx.objectStore('f').put({ blob: file, name: file.name, type: file.type, at: Date.now() }, 'pending');
-          tx.oncomplete = function () { db.close(); resolve(); };
-          tx.onerror = tx.onabort = function () { db.close(); reject(tx.error); };
+          try {
+            var db = req.result, tx = db.transaction('f', 'readwrite');
+            tx.objectStore('f').put({ blob: file, name: file.name, type: file.type, at: Date.now() }, 'pending');
+            tx.oncomplete = function () { db.close(); resolve(); };
+            tx.onerror = tx.onabort = function () { db.close(); reject(tx.error); };
+          } catch (e) { reject(e); }
         };
       } catch (e) { reject(e); }
     });

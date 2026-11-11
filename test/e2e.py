@@ -25,7 +25,8 @@ results={}
 with sync_playwright() as p:
     b=p.chromium.launch()
     for build,url in [('selfhost','http://127.0.0.1:8765/selfhost/analizador.html'),('artifact','http://127.0.0.1:8765/artifact/analizador-cv.html')]:
-        ctx=b.new_context(viewport={'width':1300,'height':900}); page=ctx.new_page()
+        ctx=b.new_context(viewport={'width':1300,'height':900}); ctx.route('**/api/**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"disponible":false}'))  # sin servidor de pagos: el Informe Pro se oculta
+        page=ctx.new_page()
         errs=[]; page.on('console', lambda m: m.type=='error' and errs.append(m.text)); page.on('pageerror', lambda e: errs.append(str(e)))
         if build=='artifact':
             page.route('https://cdn.jsdelivr.net/**', route_cdn); page.route('https://cdnjs.cloudflare.com/**', route_cdn)

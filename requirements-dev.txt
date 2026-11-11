@@ -1,0 +1,6 @@
+# Dependencias de las pruebas (no hacen falta para publicar la web)
+playwright==1.63.0
+pypdf==6.17.0
+python-docx==1.2.0
+reportlab==5.0.1
+pillow==12.3.0

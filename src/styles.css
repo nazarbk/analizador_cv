@@ -467,3 +467,5 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
 .notcv p { margin: 0 0 10px; font-size: 14px; }
 .notcv .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 .banner.warn { border-left-color: var(--warn); }
+
+.notice-storage { border-left: 4px solid var(--warn); background: var(--sheet); padding: 8px 12px; border-radius: 6px; }

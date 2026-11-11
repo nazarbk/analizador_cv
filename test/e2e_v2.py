@@ -19,7 +19,8 @@ def wait_status(pg): pg.wait_for_function("() => /analizado|leído|recuperado/.t
 with sync_playwright() as p:
     b=p.chromium.launch()
     for build,url in [('selfhost','http://127.0.0.1:8781/selfhost/analizador.html'),('artifact','http://127.0.0.1:8781/artifact/analizador-cv.html')]:
-        ctx=b.new_context(viewport={'width':1300,'height':900}, accept_downloads=True); pg=ctx.new_page(); errs=[]
+        ctx=b.new_context(viewport={'width':1300,'height':900}, accept_downloads=True); ctx.route('**/api/**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"disponible":false}'))  # sin servidor de pagos: el Informe Pro se oculta
+        pg=ctx.new_page(); errs=[]
         pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: m.type=='error' and errs.append(m.text))
         if build=='artifact': pg.route('https://cdn.jsdelivr.net/**', route_cdn); pg.route('https://cdnjs.cloudflare.com/**', route_cdn)
         pg.goto(url); pg.wait_for_selector('.scorecard .big')

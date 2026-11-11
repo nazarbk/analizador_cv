@@ -60,7 +60,9 @@ def main_flow(port):
             pg.click('#proForget'); pg.wait_for_selector('#proOffer, ' + REPORT)
             check('tras borrar sigue quedando 1', '1' in (pg.text_content('[data-badge=pro]') or ''))
             # recarga: se conservan compra e informes
-            pg.reload(); pg.wait_for_selector('.scorecard .big'); pg.click('#tabs a[data-view=pro]'); pg.wait_for_timeout(800)
+            pg.reload(); pg.wait_for_selector('.scorecard .big'); pg.click('#tabs a[data-view=pro]')
+            try: pg.wait_for_selector('.pro-reports li', timeout=8000)
+            except Exception: pass
             check('tras recargar: lista de informes', pg.locator('.pro-reports li').count() == 1)
             check('tras recargar (CV de ejemplo): pide subir el CV', 'sube primero tu CV' in (pg.text_content('#proWhy') if pg.locator('#proWhy').count() else 'sube primero tu CV'))
             upload(pg, CV1); pg.click('#tabs a[data-view=pro]'); pg.wait_for_timeout(400)

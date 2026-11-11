@@ -32,9 +32,9 @@ Guarda CV y oferta en IndexedDB  ──POST /api/checkout──▶ crea la sesi�
 ◀──────────── vuelve a /analizador.html?pro=cs_… ◀──────────────────────────────────┘
 Recupera CV y oferta de IndexedDB
 Envía CV sin contacto + oferta ──POST /api/generate──▶ 1. comprueba en Stripe que está pagado
-                                                        2. comprueba que quedan generaciones
+                                                        2. reserva un informe (escritura condicional)
                                                         3. llama a la API de Claude (streaming) ──▶ Anthropic
-◀────────────── el informe llega en streaming ◀─────────┘ 4. al terminar, suma 1 en el pago
+◀────────────── el informe llega en streaming ◀─────────┘ 4. al terminar, lo cuenta; si falla, libera la reserva
 Muestra el informe, lo guarda en IndexedDB                 (metadata del PaymentIntent)
 PDF y Word se generan en el navegador
 ```
@@ -42,7 +42,8 @@ PDF y Word se generan en el navegador
 - **No hay base de datos.** El contador de generaciones vive en los metadatos del pago en Stripe, y el informe se guarda solo en el navegador de quien lo compra.
 - **Sin dependencias de npm.** Las funciones usan `fetch` contra las APIs REST de Stripe y Anthropic.
 - **Edge Functions** porque la generación tarda entre 30 y 60 segundos: en streaming no tienen límite de duración, siempre que empiecen a responder en menos de 40 segundos.
-- Si la IA falla o se corta la conexión, el intento **no se cuenta**. Solo se cuenta cuando el informe llega completo.
+- **Contador sin base de datos y a prueba de peticiones simultáneas.** Vive en los metadatos del pago: `generaciones` (informes completados), `reservas` (en curso) e `intentos` (versión). Cada cambio se escribe con la clave de idempotencia `ipro_<pago>_<versión+1>`: si dos peticiones leen la misma versión, Stripe solo acepta la primera y la otra vuelve a leer. El informe se **reserva antes** de llamar a la IA, así que un fallo del contador nunca regala informes (sin reserva no se genera). Una reserva que no se cierra (función cortada) deja de contar a los 15 minutos.
+- Si la IA falla o se corta la conexión, la reserva se libera y el intento **no se cuenta**. Solo se cuenta cuando el informe llega completo.
 - Si la compra se **devuelve** o entra en **disputa**, deja de dar informes (los ya generados siguen en el navegador de quien compró).
 - **Nada pagado se pierde en el navegador:** el monedero local (`pro-wallet`) guarda el código de cada compra y se sincroniza con Stripe (`/api/estado`). Cada informe guarda su propia copia del CV y de la oferta, así que se puede subir otro CV y usar los informes restantes con él; borrar un informe no borra la compra; si la pestaña se cierra justo después de pagar, la compra aparece al volver a entrar; y con el **enlace de la compra** (`/analizador.html?pro=<código>`) se usa en otro navegador.
 
@@ -92,9 +93,10 @@ Sin `STRIPE_SECRET_KEY` y `ANTHROPIC_API_KEY`, la sección Informe Pro se oculta
 
 ### 3.6 Prueba local
 ```
+npm ci && pip install -r requirements-dev.txt && python -m playwright install chromium
 python3 build.py
 node test/pro_server.mjs 8820        # Stripe y Claude simulados → http://127.0.0.1:8820/analizador.html
-python3 test/e2e_pro.py              # prueba automática del flujo completo
+python3 scripts/test_all.py          # toda la batería (también la ejecuta GitHub Actions en cada PR)
 ```
 
 ## 4. Test de 30 días

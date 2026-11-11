@@ -9,7 +9,8 @@ const PORT = +(process.argv[2] || 8820), SITE = 'http://127.0.0.1:' + PORT;
 Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_mock', ANTHROPIC_API_KEY: 'sk-ant-mock', SITE_URL: SITE });
 const FAIL_FIRST = process.env.MOCK_FAIL_FIRST === '1';
 const NO_CHARGES = process.env.MOCK_NO_CHARGES === '1';
-const sessions = new Map(), log = [];
+const sessions = new Map(), log = [], idem = new Map();
+const STRIPE_POST_FAIL = process.env.MOCK_STRIPE_POST_FAIL === '1';
 let aiCalls = 0;
 const realFetch = globalThis.fetch;
 const sse = (o) => 'event: ' + o.type + '\ndata: ' + JSON.stringify(o) + '\n\n';
@@ -47,12 +48,27 @@ globalThis.fetch = async (url, init = {}) => {
     const p = url.slice('https://api.stripe.com/v1'.length), body = init.body ? Object.fromEntries(new URLSearchParams(init.body)) : {};
     log.push({ stripe: init.method + ' ' + p, body, version: init.headers['Stripe-Version'] });
     const J = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json' } });
-    if (init.method === 'POST' && p === '/checkout/sessions') { const id = 'cs_test_' + Math.random().toString(36).slice(2) + 'abcdefghij'; sessions.set(id, { paid: false, success: body.success_url, gen: 0, params: body }); return J({ id, url: SITE + '/__mock_checkout?session=' + id }); }
+    if (init.method === 'POST' && p === '/checkout/sessions') { const id = 'cs_test_' + Math.random().toString(36).slice(2) + 'abcdefghij'; sessions.set(id, { paid: false, success: body.success_url, gen: 0, meta: {}, params: body }); return J({ id, url: SITE + '/__mock_checkout?session=' + id }); }
     let m;
     if ((m = p.match(/^\/checkout\/sessions\/(.+)$/))) { const s = sessions.get(decodeURIComponent(m[1])); if (!s) return J({ error: { message: 'No such session' } }, 404); return J({ id: m[1], payment_status: s.paid ? 'paid' : 'unpaid', status: s.paid ? 'complete' : 'open', metadata: { producto: s.params['metadata[producto]'] }, payment_intent: 'pi_' + m[1], created: Math.floor(Date.now() / 1000), customer_details: { email: 'test@example.com' } }); }
     if ((m = p.match(/^\/payment_intents\/pi_([^?]+)(\?.*)?$/))) {
-      const s = sessions.get(decodeURIComponent(m[1])); if (init.method === 'POST') s.gen = +body['metadata[generaciones]'];
-      const pi = { id: 'pi_' + m[1], metadata: { generaciones: String(s.gen) }, latest_charge: 'ch_' + m[1] };
+      const s = sessions.get(decodeURIComponent(m[1]));
+      if (init.method === 'POST') {
+        // claves de idempotencia como en Stripe: misma clave + otros datos → 400 idempotency_error; a la vez → 409
+        const key = init.headers['Idempotency-Key'], sig = JSON.stringify(body);
+        if (key) {
+          const prev = idem.get(key);
+          if (prev === 'en_curso') return J({ error: { type: 'idempotency_error', message: 'There is currently another in-progress request using this Idempotent Key' } }, 409);
+          if (prev && prev !== sig) return J({ error: { type: 'idempotency_error', message: 'Keys for idempotent requests can only be used with the same parameters they were first used with.' } }, 400);
+          if (prev === sig) return J({ id: 'pi_' + m[1], metadata: { ...s.meta } });
+          idem.set(key, 'en_curso');
+        }
+        if (STRIPE_POST_FAIL) { idem.delete(key); return J({ error: { type: 'api_error', message: 'mock: Stripe caído' } }, 500); }
+        await new Promise(r => setTimeout(r, 40));
+        for (const [k, v] of Object.entries(body)) { const mk = k.match(/^metadata\[(.+)\]$/); if (mk) { if (v === '') delete s.meta[mk[1]]; else s.meta[mk[1]] = v; } }
+        s.gen = +(s.meta.generaciones || 0); if (key) idem.set(key, sig); log.push({ counter: { ...s.meta } });
+      }
+      const pi = { id: 'pi_' + m[1], metadata: { ...s.meta }, latest_charge: 'ch_' + m[1] };
       if (m[2] && /expand/.test(m[2])) { if (NO_CHARGES) return J({ error: { type: 'invalid_request_error', message: 'The provided key does not have the required permissions' } }, 403); pi.latest_charge = { id: 'ch_' + m[1], refunded: !!s.refunded, disputed: false }; }
       return J(pi);
     }
@@ -72,6 +88,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 http.createServer(async (req, res) => {
   const u = new URL(req.url, SITE);
   if (u.pathname === '/__log') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ log, aiCalls, sessions: [...sessions].map(([k, v]) => ({ id: k, ...v })) })); return; }
+  if (u.pathname === '/__meta') { const s = sessions.get(u.searchParams.get('session')); if (s) { Object.assign(s.meta, JSON.parse(u.searchParams.get('set') || '{}')); s.gen = +(s.meta.generaciones || 0); } res.end('ok'); return; }
   if (u.pathname === '/__refund') { const s = sessions.get(u.searchParams.get('session')); if (s) s.refunded = true; res.end('ok'); return; }
   if (u.pathname === '/__mark_paid') { const s = sessions.get(u.searchParams.get('session')); if (s) s.paid = true; res.end('ok'); return; }
   if (u.pathname === '/__mock_checkout') { const s = sessions.get(u.searchParams.get('session')); s.paid = true; res.writeHead(302, { location: s.success.replace('{CHECKOUT_SESSION_ID}', u.searchParams.get('session')) }); res.end(); return; }
@@ -79,7 +96,7 @@ http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);
     const r = await fns[u.pathname](new Request(u, { method: req.method, headers: req.headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) }));
     res.writeHead(r.status, Object.fromEntries(r.headers));
-    if (r.body) { const rd = r.body.getReader(); for (;;) { const { value, done } = await rd.read(); if (done) break; res.write(value); } }
+    if (r.body) { const rd = r.body.getReader(); res.on('close', () => { if (!res.writableEnded) rd.cancel().catch(() => {}); }); try { for (;;) { const { value, done } = await rd.read(); if (done) break; res.write(value); } } catch (e) { } }
     res.end(); return;
   }
   let f = path.join(ROOT, 'site', decodeURIComponent(u.pathname));
