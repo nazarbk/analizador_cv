@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dXpnWQAAyZ8QV+VbAirUtDr7R2KBgh0UfIlk2MID/k8=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-V06nvUNdDen7C+T0/SV/Jt4TpI81aA8buJu7clbST3Q=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-AXznUHXyhZEfCWUMCYDL9/iT5uhV6ivwKqPpJySOFss='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dXpnWQAAyZ8QV+VbAirUtDr7R2KBgh0UfIlk2MID/k8=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-V06nvUNdDen7C+T0/SV/Jt4TpI81aA8buJu7clbST3Q=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-mHV3/w/kgLhoQtpfMYLOz7hVw5Dl3ksZ1/O5dcxshNY='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Analizador de CV · Análisis ATS en tu navegador</title>
 <meta name="description" content="Analiza gratis tu CV en el navegador, sin subirlo a ningún servidor: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y CV en PDF o Word.">
@@ -3454,7 +3454,7 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
     if (IDB_OK === false) return Promise.reject(new Error('idb_no_disponible'));   // ya sabemos que no funciona: no se espera otra vez
     return new Promise((resolve, reject) => {
       let done = false; const end = (f, v) => { if (!done) { done = true; clearTimeout(timer); if (f === reject) IDB_OK = false; f(v); } };
-      const timer = setTimeout(() => end(reject, new Error('idb_timeout')), 2500);
+      const timer = setTimeout(() => end(reject, new Error('idb_timeout')), 5000);
       let req; try { req = indexedDB.open('cv-handoff', 1); } catch (e) { end(reject, e); return; }
       req.onupgradeneeded = () => { try { req.result.createObjectStore('f'); } catch (e) { } };
       req.onerror = () => end(reject, req.error);

@@ -546,7 +546,7 @@
     if (IDB_OK === false) return Promise.reject(new Error('idb_no_disponible'));   // ya sabemos que no funciona: no se espera otra vez
     return new Promise((resolve, reject) => {
       let done = false; const end = (f, v) => { if (!done) { done = true; clearTimeout(timer); if (f === reject) IDB_OK = false; f(v); } };
-      const timer = setTimeout(() => end(reject, new Error('idb_timeout')), 2500);
+      const timer = setTimeout(() => end(reject, new Error('idb_timeout')), 5000);
       let req; try { req = indexedDB.open('cv-handoff', 1); } catch (e) { end(reject, e); return; }
       req.onupgradeneeded = () => { try { req.result.createObjectStore('f'); } catch (e) { } };
       req.onerror = () => end(reject, req.error);

@@ -7,7 +7,7 @@
   function say(msg, err) { status.textContent = msg; status.className = 'lp-status' + (err ? ' err' : ''); }
   function store(file) {
     return new Promise(function (resolve, reject) {
-      setTimeout(function () { reject(new Error('timeout')); }, 2500);   // algunos navegadores en modo privado no responden
+      setTimeout(function () { reject(new Error('timeout')); }, 5000);   // algunos navegadores en modo privado no responden
       try {
         var req = indexedDB.open('cv-handoff', 1);
         req.onupgradeneeded = function () { req.result.createObjectStore('f'); };
