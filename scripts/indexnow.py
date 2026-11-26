@@ -43,18 +43,24 @@ def fetch(url):
     with urllib.request.urlopen(req, timeout=20) as r: return r.read()
 
 
+def digest(html):
+    # Netlify reescribe los enlaces al publicar (URL «bonitas»), así que se comparan las páginas sin los href
+    return hashlib.sha256(re.sub(rb'href="[^"]*"', b'', html)).hexdigest()
+
+
 def wait_live(pages):
-    """Espera hasta que todas las páginas publicadas coinciden con las del repo (o se agota el tiempo)."""
-    pending = {p: hashlib.sha256(open(os.path.join(ROOT, p), 'rb').read()).hexdigest() for p in pages}
+    """Espera a que Netlify publique el despliegue nuevo. Los despliegues son atómicos:
+    en cuanto una página cambiada se sirve en su versión nueva, lo están todas."""
+    want = {p: digest(open(os.path.join(ROOT, p), 'rb').read()) for p in pages}
     t0 = time.time()
-    while pending and time.time() - t0 < WAIT_S:
-        for p, h in list(pending.items()):
+    while time.time() - t0 < WAIT_S:
+        for p, h in want.items():
             try:
-                if hashlib.sha256(fetch(to_url(p))).hexdigest() == h: del pending[p]
+                if digest(fetch(to_url(p))) == h:
+                    print('Netlify ya publica la versión nueva (%.0f s, comprobado con %s).' % (time.time() - t0, p)); return
             except Exception: pass
-        if pending: time.sleep(20)
-    if pending: print('Aviso: tras %d s Netlify aún no sirve la versión nueva de: %s. Se avisa igualmente.' % (WAIT_S, ', '.join(pending)))
-    else: print('Netlify ya publica la versión nueva (%.0f s).' % (time.time() - t0))
+        time.sleep(20)
+    print('Aviso: tras %d s no se ha podido confirmar el despliegue. Se avisa igualmente.' % WAIT_S)
 
 
 def submit(urls):
