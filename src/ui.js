@@ -929,7 +929,7 @@
     await idbDel('pro-result:' + last); await idbDel('pro-last');
   }
   async function proInit() {
-    if (BUILD !== 'selfhost') return;
+    if (BUILD !== 'selfhost' || window.CV_PRO === false) return;
     try {
       const r = await fetch('/api/estado', { headers: { accept: 'application/json' } });
       const d = r.ok ? await r.json() : null;
@@ -953,7 +953,7 @@
 
   // ---------- navegación ----------
   function go(view, push) {
-    if (!VIEWS.includes(view)) view = 'resumen';
+    if (!VIEWS.includes(view) || (view === 'pro' && window.CV_PRO === false)) view = 'resumen';
     const prev = VIEWS.find(v => !$('#v-' + v).hidden);
     VIEWS.forEach(v => { $('#v-' + v).hidden = v !== view; });
     if (prev && prev !== view && !reduceMotion()) { const el = $('#v-' + view); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }

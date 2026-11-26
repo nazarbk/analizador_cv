@@ -11,6 +11,19 @@ DIST = os.path.join(ROOT, 'dist')
 sys.path.insert(0, SRC)
 from legal import PAGES, PAGE_TPL
 
+# Informe Pro (de pago). En False se oculta en toda la web: la pestaña del analizador, el bloque de precios,
+# las menciones en guías y preguntas, el botón de las guías y la oferta de los datos estructurados.
+# Para volver a activarlo: True, python3 build.py y las claves de Stripe y Anthropic en Netlify.
+PRO_ACTIVO = False
+
+# Clave de IndexNow (aviso a Bing de páginas nuevas). Se publica en /<clave>.txt; la usa scripts/indexnow.py.
+INDEXNOW_KEY = '731511b0d56ff10fefbd4bc6a2eec62f'
+
+def pro(html):
+    """<!--PRO-->texto con Pro<!--NOPRO-->texto sin Pro<!--/PRO-->  (la parte NOPRO es opcional)"""
+    import re as _r
+    return _r.sub(r'<!--PRO-->(.*?)(?:<!--NOPRO-->(.*?))?<!--/PRO-->', lambda m: m.group(1) if PRO_ACTIVO else (m.group(2) or ''), html, flags=_r.S)
+
 PDFJS = '6.2.108'
 JSZIP = '3.10.1'
 PDFLIB = '1.17.1'
@@ -49,7 +62,7 @@ def seo_meta(title, desc, path, og_title=None):
             '<meta name="twitter:card" content="summary_large_image">\n') % {'u': url, 'a': AUTHOR, 't': og_title or title, 'd': desc, 's': SITE_URL}
 
 read = lambda n: open(os.path.join(SRC, n), encoding='utf-8').read()
-css, markup = read('styles.css'), read('markup.html')
+css, markup = read('styles.css'), pro(read('markup.html'))
 TOKENS = _re.search(r':root \{.*?\n\}', css, _re.S).group(0)   # paleta compartida con la página principal
 js_files = ['data.js', 'engine.js', 'extract.js', 'cvtemplate.js', 'translate.js']
 sample_text = open(os.path.join(ROOT, 'test', 'sample_es.txt'), encoding='utf-8').read()
@@ -89,7 +102,8 @@ ART_LIBS = ART_LIBS[:-2] + """,
 };""" % PDFLIB
 
 SELF_LIBS = """window.CV_BUILD = 'selfhost';
-window.CV_LEGAL_LINKS = [['Aviso legal', 'aviso-legal.html'], ['Privacidad', 'privacidad.html'], ['Términos de uso', 'terminos.html'], ['Condiciones de venta', 'condiciones.html'], ['Código en GitHub', 'https://github.com/nazarbk']];
+window.CV_PRO = %s;
+""" % ('true' if PRO_ACTIVO else 'false') + """window.CV_LEGAL_LINKS = [['Aviso legal', 'aviso-legal.html'], ['Privacidad', 'privacidad.html'], ['Términos de uso', 'terminos.html'], ['Condiciones de venta', 'condiciones.html'], ['Código en GitHub', 'https://github.com/nazarbk']];
 window.CV_AUTHOR = { name: 'Nazar Blanco Kataran', email: 'nazarblanco@gmail.com' };
 window.CV_LIBS = {
   pdfjs: async function () {
@@ -135,7 +149,7 @@ HOME_TITLE = 'Analizador de CV gratis: comprueba tu CV para los filtros ATS'
 HOME_DESC = 'Analiza tu CV gratis y sin registro: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y un CV listo en PDF o Word. No sale de tu navegador.'
 
 def build_landing(out, base_css):
-    body = read('landing.html'); js = read('landing.js')
+    body = pro(read('landing.html')); js = read('landing.js')
     body = body.replace('<!--GUIAS-->', '<ul class="lp-guides">' + ''.join('<li><a href="guias/%s.html">%s</a><p>%s</p></li>' % (g['slug'], g['h1'], g['lede']) for g in load_guides()) + '</ul>')
     h = base64.b64encode(hashlib.sha256(('\n' + js + '\n').encode()).digest()).decode()
     csp = ("default-src 'self'; script-src 'self' 'sha256-%s'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
@@ -144,8 +158,8 @@ def build_landing(out, base_css):
         '@context': 'https://schema.org', '@type': 'WebApplication', 'name': 'Analizador de CV', 'url': SITE_URL + '/',
         'description': HOME_DESC, 'inLanguage': 'es', 'applicationCategory': 'BusinessApplication', 'operatingSystem': 'Cualquiera (navegador web)',
         'browserRequirements': 'Requiere JavaScript y un navegador actual', 'isAccessibleForFree': True,
-        'offers': [{'@type': 'Offer', 'name': 'Análisis gratuito', 'price': '0', 'priceCurrency': 'EUR'},
-                   {'@type': 'Offer', 'name': 'Informe Pro: CV adaptado a una oferta y carta de presentación', 'price': '4.99', 'priceCurrency': 'EUR'}],
+        'offers': [{'@type': 'Offer', 'name': 'Análisis gratuito', 'price': '0', 'priceCurrency': 'EUR'}] + ([
+                   {'@type': 'Offer', 'name': 'Informe Pro: CV adaptado a una oferta y carta de presentación', 'price': '4.99', 'priceCurrency': 'EUR'}] if PRO_ACTIVO else []),
         'author': {'@type': 'Person', 'name': AUTHOR, 'url': 'https://github.com/nazarbk'},
         'image': SITE_URL + '/assets/og-image.png',
         'featureList': ['Compatibilidad con ATS e IA', 'Puntos fuertes y débiles', 'Coincidencia con ofertas de empleo', 'Datos listos para copiar en portales de empleo', 'CV en formato ATS en PDF y Word', 'Versión del CV en inglés', 'Formato por país', 'Comparación de versiones']
@@ -222,7 +236,7 @@ def load_guides():
         if not fn.endswith('.html'): continue
         raw = open(os.path.join(gdir, fn), encoding='utf-8').read()
         meta = json.loads(_r.match(r'<!--(.*?)-->', raw, _r.S).group(1))
-        meta['slug'] = fn[:-5]; meta['body'] = raw[raw.index('-->') + 3:].strip()
+        meta['slug'] = fn[:-5]; meta['body'] = pro(raw[raw.index('-->') + 3:].strip())
         meta['toc'] = _r.findall(r'<h2 id="([^"]+)">(.*?)</h2>', meta['body'])
         meta['words'] = len(_r.sub(r'<[^>]+>', ' ', meta['body']).split())
         out.append(meta)
@@ -244,7 +258,7 @@ def build_guides(out):
         others = [o for o in gs if o['slug'] != g['slug']]
         toc = '<nav class="toc-box" aria-label="Contenido"><strong>En esta guía</strong><ol>' + ''.join('<li><a href="#%s">%s</a></li>' % (i, t) for i, t in g['toc']) + '</ol></nav>'
         cta = ('<aside class="cta-box"><h2>Comprueba tu CV gratis</h2><p>El Analizador de CV revisa tu currículum como lo haría un ATS y te dice qué arreglar, por prioridad. Se analiza en tu navegador: no se sube a ningún servidor.</p>'
-               '<div class="lp-cta"><a class="lp-btn lp-btn-primary" href="/analizador.html">Analizar mi CV gratis</a><a class="lp-btn lp-btn-ghost" href="/analizador.html#pro">Ver el Informe Pro</a></div></aside>')
+               '<div class="lp-cta"><a class="lp-btn lp-btn-primary" href="/analizador.html">Analizar mi CV gratis</a>' + ('<a class="lp-btn lp-btn-ghost" href="/analizador.html#pro">Ver el Informe Pro</a>' if PRO_ACTIVO else '') + '</div></aside>')
         rel = '<section class="related"><h2>Otras guías</h2><ul>' + ''.join('<li><a href="/guias/%s.html">%s</a></li>' % (o['slug'], o['h1']) for o in others) + '</ul></section>'
         main = ('<main id="main" class="lp-article"><nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">›</span><a href="/guias/">Guías</a><span aria-hidden="true">›</span><span>%s</span></nav>'
                 '<article><h1>%s</h1><p class="lede">%s</p><p class="byline">Por Nazar Blanco Kataran · Actualizada el %s · %d min de lectura</p>%s<div class="prose">%s</div></article>%s%s</main>') % (
@@ -282,6 +296,7 @@ def copy_assets(out):
     sm = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(
         '  <url><loc>%s/%s</loc><lastmod>%s</lastmod><priority>%s</priority></url>\n' % (SITE_URL, u, today, pr) for u, pr in urls) + '</urlset>\n'
     open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8').write(sm)
+    open(os.path.join(out, INDEXNOW_KEY + '.txt'), 'w').write(INDEXNOW_KEY)
     open(os.path.join(out, 'robots.txt'), 'w').write('User-agent: *\nAllow: /\n\nSitemap: %s/sitemap.xml\n' % SITE_URL)
 
 def build_selfhost():
