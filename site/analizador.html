@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dXpnWQAAyZ8QV+VbAirUtDr7R2KBgh0UfIlk2MID/k8=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-V06nvUNdDen7C+T0/SV/Jt4TpI81aA8buJu7clbST3Q=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-mHV3/w/kgLhoQtpfMYLOz7hVw5Dl3ksZ1/O5dcxshNY='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KC+MwGJ6sSaGhXXtJ4mtKa51zjBd1PajdoIajjZRRNw=' 'sha256-vErOWfFCS6tONMB8KuY4YEg7UGsIWRiHofBIkASF9Ec=' 'sha256-V06nvUNdDen7C+T0/SV/Jt4TpI81aA8buJu7clbST3Q=' 'sha256-MHAXd62wvX0K/sdg7+b43PYC+EAJZvHPkMkSOExQ9ds=' 'sha256-LBr8HeeNJT4mYEEJxiC4EYFl7gikZReRHAQFsjZqdzM=' 'sha256-SCtL+geQ46PUFQUMYOuTGT4jluDe/nxUvw2Hw55G6LU=' 'sha256-zudiffOxlMr9S7YwEKnyyvmHY5GvtHeEMwE4jK+9jOY=' 'sha256-uv1iNJ5ygKGctnNNvo+TOyx2lRfVrOLRjQMILSMT3kk='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Analizador de CV · Análisis ATS en tu navegador</title>
 <meta name="description" content="Analiza gratis tu CV en el navegador, sin subirlo a ningún servidor: compatibilidad ATS, puntos fuertes y débiles, encaje con ofertas y CV en PDF o Word.">
@@ -640,7 +640,7 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
         </ul>
         <h4>Cómo funciona el análisis</h4>
         <ul>
-          <li>Es un análisis por reglas: comprueba estructura, formato, palabras clave, datos personales y convenciones de cada país. El análisis gratuito no usa IA generativa ni modelos que aprendan de tus datos. Solo el Informe Pro, si lo compras y lo aceptas, envía el texto del CV (sin tu nombre ni tus datos de contacto) y la oferta a la API de IA de Anthropic para generarlo.</li>
+          <li>Es un análisis por reglas: comprueba estructura, formato, palabras clave, datos personales y convenciones de cada país. No usa IA generativa ni modelos que aprendan de tus datos.</li>
           <li>Detecta datos personales sensibles (DNI, fecha de nacimiento, estado civil…) solo para recomendarte quitarlos. No deduce ni clasifica información sobre ti.</li>
           <li>Los resultados son orientativos. Cada empresa configura su ATS de forma distinta, así que ninguna herramienta puede garantizar que un CV pase un filtro concreto.</li>
         </ul>
@@ -666,6 +666,7 @@ details.orig p { margin-top: 4px; padding: 6px 9px; background: var(--sheet); bo
 
 <script>
 window.CV_BUILD = 'selfhost';
+window.CV_PRO = false;
 window.CV_LEGAL_LINKS = [['Aviso legal', 'aviso-legal.html'], ['Privacidad', 'privacidad.html'], ['Términos de uso', 'terminos.html'], ['Condiciones de venta', 'condiciones.html'], ['Código en GitHub', 'https://github.com/nazarbk']];
 window.CV_AUTHOR = { name: 'Nazar Blanco Kataran', email: 'nazarblanco@gmail.com' };
 window.CV_LIBS = {
@@ -3837,7 +3838,7 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
     await idbDel('pro-result:' + last); await idbDel('pro-last');
   }
   async function proInit() {
-    if (BUILD !== 'selfhost') return;
+    if (BUILD !== 'selfhost' || window.CV_PRO === false) return;
     try {
       const r = await fetch('/api/estado', { headers: { accept: 'application/json' } });
       const d = r.ok ? await r.json() : null;
@@ -3861,7 +3862,7 @@ window.CV_SAMPLE = {"text": "CURRICULUM VITAE\nLucía Martín Ferrer\nResponsabl
 
   // ---------- navegación ----------
   function go(view, push) {
-    if (!VIEWS.includes(view)) view = 'resumen';
+    if (!VIEWS.includes(view) || (view === 'pro' && window.CV_PRO === false)) view = 'resumen';
     const prev = VIEWS.find(v => !$('#v-' + v).hidden);
     VIEWS.forEach(v => { $('#v-' + v).hidden = v !== view; });
     if (prev && prev !== view && !reduceMotion()) { const el = $('#v-' + view); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }

@@ -12,6 +12,10 @@ TESTS = [
     ['python3', 'test/e2e_pro.py'], ['python3', 'test/e2e_storage.py'],
 ]
 BAD = re.compile(r'^(FALLO|Traceback)|^(errors|ERRORS) \[(?!\])', re.M)
+# Con el Informe Pro apagado (PRO_ACTIVO = False en build.py) sus pruebas de navegador no tienen nada que probar.
+PRO_ON = re.search(r'^PRO_ACTIVO = True', open(os.path.join(ROOT, 'build.py'), encoding='utf-8').read(), re.M)
+PRO_TESTS = ('test/e2e_pro.py', 'test/e2e_storage.py')  # las dos usan el servidor simulado del Informe Pro
+if not PRO_ON: TESTS = [t for t in TESTS if t[1] not in PRO_TESTS]; print('Informe Pro apagado: se omiten ' + ', '.join(PRO_TESTS), flush=True)
 only = sys.argv[1:]; failed = []
 for cmd in TESTS:
     if only and not any(o in cmd[1] for o in only): continue

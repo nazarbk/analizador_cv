@@ -1,0 +1,30 @@
+# Avisa a Bing (IndexNow) de las páginas nuevas o modificadas cuando se publican en main.
+# Espera a que Netlify sirva la versión nueva antes de avisar. Ver scripts/indexnow.py.
+name: IndexNow
+on:
+  push:
+    branches: [main]
+    paths: ['site/**']
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'URL completas separadas por espacios (vacío = las cambiadas en el último commit)'
+        required: false
+permissions:
+  contents: read
+jobs:
+  indexnow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Avisar a IndexNow
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          URLS: ${{ github.event.inputs.urls }}
+        run: |
+          if [ -n "$URLS" ]; then python3 scripts/indexnow.py --urls $URLS
+          else python3 scripts/indexnow.py "${BEFORE:-}" "$AFTER"; fi
